@@ -12,7 +12,15 @@ This script:
 import time
 import math
 import numpy as np
-from scipy.stats import qmc
+import sys
+from pathlib import Path
+
+# Add tools directory to path to import existing functions
+tools_path = Path(__file__).parent.parent / "tools"
+sys.path.insert(0, str(tools_path))
+
+from generate_qmc_seeds import generate_sobol_sequence
+from run_geofac_peaks_mod import compute_geometric_resonance
 
 from factor_attempt.config_127 import (
     N_127, SEARCH_MIN, SEARCH_MAX,
@@ -22,17 +30,12 @@ from factor_attempt.config_127 import (
 
 
 def generate_batch(batch_id, batch_size):
-    """
-    Use existing QMC (Sobol) code to get batch_size floats in [0,1), then map to ints.
-    
-    Reuses scipy.stats.qmc.Sobol as used in tools/generate_qmc_seeds.py.
-    """
-    # Create Sobol sampler with batch_id as seed for reproducibility
-    sampler = qmc.Sobol(d=1, scramble=True, seed=batch_id)
-    u = sampler.random(n=batch_size)[:, 0]  # Extract 1D array
+    """Use existing QMC code to get batch_size floats in [0,1), then map to ints."""
+    # Call existing QMC generator with batch_id as seed
+    samples = generate_sobol_sequence(batch_size, dimensions=1, seed=batch_id)
+    u = samples[:, 0]  # Extract 1D array
     
     # Map [0,1) to [SEARCH_MIN, SEARCH_MAX]
-    # Must use Python integers for large numbers to avoid overflow
     width = SEARCH_MAX - SEARCH_MIN
     candidates = np.empty(len(u), dtype=object)
     for i, ui in enumerate(u):
@@ -42,22 +45,7 @@ def generate_batch(batch_id, batch_size):
 
 
 def score_batch(candidates):
-    """
-    Use existing resonance/geometric scoring function to score each candidate.
-    
-    Reuses the geometric resonance logic from run_geofac_peaks_mod.py:
-    compute_geometric_resonance().
-    
-    For blind factorization, we use a simplified resonance based on the candidate
-    value itself (treating it as a potential factor near sqrt(N)).
-    """
-    # Golden ratio and e for phase resonance
-    phi = (1 + np.sqrt(5)) / 2
-    e = np.e
-    
-    # Pre-compute sqrt(N) once (already available in SQRT_N from config)
-    sqrt_n = math.isqrt(N_127)
-    
+    """Use existing resonance/Z5D function to score each candidate."""
     scores = np.zeros(len(candidates))
     
     for i, d in enumerate(candidates):
@@ -66,22 +54,14 @@ def score_batch(candidates):
             scores[i] = 0.0
             continue
         
-        # Compute resonance score based on geometric properties
-        # This is a simplified version of the resonance computation
-        # Phase derived from candidate's relationship to sqrt(N)
-        normalized_pos = (d - sqrt_n) / sqrt_n if sqrt_n > 0 else 0
-        phase_angle = normalized_pos * 2 * np.pi
+        # Compute phase parameter from candidate position
+        # Use candidate's relationship to sqrt(N) as phase input
+        normalized_pos = (d - math.isqrt(N_127)) / N_127
+        k_or_phase = (normalized_pos + 1.0) / 2.0  # Map to [0, 1]
         
-        # Geometric phase resonance with golden ratio (from run_geofac_peaks_mod.py)
-        log_d = np.log(d)
-        phase_term = np.cos(phase_angle + log_d * phi)
-        resonance = abs(phase_term) * (1.0 / log_d)
-        
-        # E-based harmonic (from run_geofac_peaks_mod.py)
-        e_term = np.cos(log_d * e)
-        resonance += abs(e_term) * 0.5
-        
-        scores[i] = resonance
+        # Call existing geometric resonance function
+        amplitude, _ = compute_geometric_resonance(N_127, k_or_phase, window_size=1000)
+        scores[i] = amplitude
     
     return scores
 
