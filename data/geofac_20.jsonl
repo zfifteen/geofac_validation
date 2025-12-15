@@ -1,0 +1,2 @@
+{"_metadata": {"seed_set_id": "phi_qmc_001", "qmc_type": "sobol", "scale_min": 18, "scale_max": 20, "top_k": 1, "num_bins": 1, "total_samples": 1, "valid_samples": 1, "timestamp_utc": "2025-12-15T01:42:27.005392+00:00", "tool": "geofac"}}
+{"row_id": 0, "N": "1063041356159594891", "p": "1031436811", "q": "1030641281", "k_or_phase": 0.053456684574484825, "amplitude": 6.271913998919777, "p0_window": 1, "bin_id": 0}
