@@ -32,7 +32,7 @@ def generate_batch(batch_id, batch_size):
     u = sampler.random(n=batch_size)[:, 0]  # Extract 1D array
     
     # Map [0,1) to [SEARCH_MIN, SEARCH_MAX]
-    # Use Python integers for large numbers to avoid overflow
+    # Must use Python integers for large numbers to avoid overflow
     width = SEARCH_MAX - SEARCH_MIN
     candidates = np.empty(len(u), dtype=object)
     for i, ui in enumerate(u):
@@ -55,6 +55,9 @@ def score_batch(candidates):
     phi = (1 + np.sqrt(5)) / 2
     e = np.e
     
+    # Pre-compute sqrt(N) once (already available in SQRT_N from config)
+    sqrt_n = math.isqrt(N_127)
+    
     scores = np.zeros(len(candidates))
     
     for i, d in enumerate(candidates):
@@ -66,12 +69,11 @@ def score_batch(candidates):
         # Compute resonance score based on geometric properties
         # This is a simplified version of the resonance computation
         # Phase derived from candidate's relationship to sqrt(N)
-        sqrt_n = math.isqrt(N_127)
         normalized_pos = (d - sqrt_n) / sqrt_n if sqrt_n > 0 else 0
         phase_angle = normalized_pos * 2 * np.pi
         
         # Geometric phase resonance with golden ratio (from run_geofac_peaks_mod.py)
-        log_d = np.log(max(2, d))
+        log_d = np.log(d)
         phase_term = np.cos(phase_angle + log_d * phi)
         resonance = abs(phase_term) * (1.0 / log_d)
         
@@ -90,7 +92,7 @@ def try_certify_factor(N, d):
     
     Returns the factor if found, None otherwise.
     """
-    g = math.gcd(N, int(d))
+    g = math.gcd(N, d)
     if 1 < g < N:
         return g
     return None
@@ -109,6 +111,7 @@ def main():
     print(f"Total candidates: {TOTAL_CANDIDATES:,}")
     print(f"Batches: {NUM_BATCHES}")
     print(f"Top-K per batch: {TOP_K_PER_BATCH:,}")
+    print(f"Max GCD calls: {NUM_BATCHES * TOP_K_PER_BATCH:,} (batches × top-K)")
     print(f"Max time: {MAX_WALLCLOCK_SECONDS}s ({MAX_WALLCLOCK_SECONDS//60} minutes)")
     print()
     
@@ -127,16 +130,19 @@ def main():
         # Generate candidates
         candidates = generate_batch(batch_id, batch_size)
         
-        # Score candidates
+        # Score all candidates in batch
         scores = score_batch(candidates)
         
-        # Select top-K by score
+        # CRITICAL CONSTRAINT: Select ONLY top-K by score
+        # GCD will be called ONLY on these top-K candidates, never on all candidates
+        # This enforces a maximum of NUM_BATCHES * TOP_K_PER_BATCH GCD calls
+        # Use argpartition for O(n) selection of top-K elements (faster than full sort)
         if TOP_K_PER_BATCH < len(scores):
             idx = np.argpartition(scores, -TOP_K_PER_BATCH)[-TOP_K_PER_BATCH:]
         else:
             idx = np.arange(len(scores))
         
-        # Test top candidates
+        # Test ONLY the top-K candidates with GCD (not all candidates)
         for i in idx:
             d = candidates[i]
             g = try_certify_factor(N_127, d)
