@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# pytest: skip-file
 """
 EXACT REPLICATION of PR#20 methodology on RSA challenges
 
@@ -8,6 +9,9 @@ This matches PR#20's N₁₂₇ test EXACTLY:
 - QMC/Sobol generation
 - Separate p and q enrichment analysis
 - Top-10K (10%) vs baseline comparison
+
+NOTE: This is a standalone script, not a pytest test suite.
+Run with: python3 adversarial_test_pr20_exact.py
 """
 
 import sys
@@ -37,7 +41,7 @@ RSA_TESTS = [
 ]
 
 
-def test_semiprime_pr20_exact(name, N, p_true, q_true):
+def run_semiprime_pr20_exact(name, N, p_true, q_true):
     """Exact replication of PR#20 methodology"""
     
     print(f"\n{'='*80}")
@@ -217,7 +221,7 @@ def main():
     
     results = []
     for test in RSA_TESTS:
-        result = test_semiprime_pr20_exact(
+        result = run_semiprime_pr20_exact(
             test["name"],
             test["N"],
             test["p"],

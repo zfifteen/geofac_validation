@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
+# pytest: skip-file
 """
 ADAPTIVE WINDOW Adversarial Test Suite for Z5D Factorization
+
+NOTE: This is a standalone script, not a pytest test suite.
+Run with: python3 adversarial_test_adaptive.py
 
 ================================================================================
 PURPOSE
@@ -226,7 +230,7 @@ def calculate_adaptive_window(N, p, q):
     return window_radius, window_pct
 
 
-def test_with_adaptive_window(name, N, p_true, q_true, num_candidates=100000):
+def run_test_with_adaptive_window(name, N, p_true, q_true, num_candidates=100000):
     """
     Test Z5D factorization guidance on a single semiprime using adaptive windows.
     
@@ -724,7 +728,7 @@ def main():
     
     for test in RSA_CHALLENGES:
         # Run test with exact PR#20 methodology + adaptive window
-        result = test_with_adaptive_window(
+        result = run_test_with_adaptive_window(
             test["name"],
             test["N"],
             test["p"],

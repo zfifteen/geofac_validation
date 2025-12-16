@@ -13,7 +13,7 @@
     "enrichment_p": 0.0,
     "enrichment_q": 0.0,
     "result": "\u2717 NONE - No enrichment",
-    "score_rate": 13010.849778322852
+    "score_rate": 16037.75673511152
   },
   {
     "name": "RSA-110",
@@ -29,7 +29,7 @@
     "enrichment_p": 0.0,
     "enrichment_q": 0.0,
     "result": "\u2717 NONE - No enrichment",
-    "score_rate": 13049.240574621515
+    "score_rate": 15753.643197880976
   },
   {
     "name": "RSA-120",
@@ -45,7 +45,7 @@
     "enrichment_p": 0.0,
     "enrichment_q": 10.0,
     "result": "\u2713 STRONG - Asymmetric (like N\u2081\u2082\u2087)",
-    "score_rate": 12377.663601729937
+    "score_rate": 15153.198061282692
   },
   {
     "name": "RSA-129",
@@ -61,6 +61,6 @@
     "enrichment_p": 0.0,
     "enrichment_q": 10.0,
     "result": "\u2713 STRONG - Asymmetric (like N\u2081\u2082\u2087)",
-    "score_rate": 17728.579065232258
+    "score_rate": 21007.220721254736
   }
 ]
