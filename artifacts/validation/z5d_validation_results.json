@@ -1,0 +1,62 @@
+{
+  "metadata": {
+    "timestamp_utc": "2025-12-16T03:23:40.118979+00:00",
+    "experiment": "Z5D hypothesis validation (Issue #16)",
+    "samples": 1000000,
+    "top_fraction": 0.01,
+    "proximity_threshold": 0.01,
+    "seed": 42,
+    "generation_time_s": 0.8786110877990723,
+    "scoring_time_s": 66.95960903167725
+  },
+  "ground_truth": {
+    "N_127": "137524771864208156028430259349934309717",
+    "sqrt_N": "11727095627827384440",
+    "p": "10508623501177419659",
+    "q": "13086849276577416863",
+    "p_offset_pct": -10.3902,
+    "q_offset_pct": 11.595
+  },
+  "search_window": {
+    "min": "10202573196209824463",
+    "max": "13251618059444944417",
+    "width": "3049044863235119954"
+  },
+  "enrichment": {
+    "near_p": 0,
+    "near_q": 0,
+    "near_either": 0,
+    "total_top_candidates": 10000,
+    "proximity_threshold": 0.01,
+    "expected_count": 400.0,
+    "enrichment_factor": 0.0
+  },
+  "statistical_tests": {
+    "ks_test": {
+      "statistic": 0.7799,
+      "p_value": 0.0,
+      "significant_001": true,
+      "significant_005": true
+    },
+    "mann_whitney": {
+      "statistic": 20041096.0,
+      "p_value": 0.0,
+      "significant_001": true,
+      "significant_005": true
+    },
+    "summary": {
+      "top_mean_distance": 0.04903881922875627,
+      "top_median_distance": 0.04903817425965429,
+      "baseline_mean_distance": 0.18461143720032483,
+      "baseline_median_distance": 0.17032457265051065,
+      "distance_ratio": 0.26563261720097797
+    }
+  },
+  "signal_classification": "STRONG",
+  "score_distribution": {
+    "top_k": 10000,
+    "best_score": -4.227119332900022,
+    "worst_top_score": -4.227045552146042,
+    "best_candidate": "13251615316348539171"
+  }
+}
