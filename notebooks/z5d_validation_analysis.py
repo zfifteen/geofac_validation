@@ -10,16 +10,30 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy import stats
-import csv
 
-# Load data
-df = pd.read_csv("experiments/z5d_validation_n127_results.csv")
+import gmpy2
+import sys
+from pathlib import Path
 
-# Convert to numeric where needed
-df["candidate"] = pd.to_numeric(df["candidate"])
+# Load data with error handling
+csv_path = (
+    Path(__file__).parent.parent / "experiments" / "z5d_validation_n127_results.csv"
+)
+try:
+    df = pd.read_csv(csv_path)
+except FileNotFoundError:
+    print(f"Error: CSV file not found at {csv_path}")
+    sys.exit(1)
+except Exception as e:
+    print(f"Error loading CSV: {e}")
+    sys.exit(1)
+
+# Keep large integers as strings for arbitrary precision
+# Only convert floats to numeric
+df["candidate"] = df["candidate"].astype(str)
 df["z5d_score"] = pd.to_numeric(df["z5d_score"])
-df["distance_to_p"] = pd.to_numeric(df["distance_to_p"])
-df["distance_to_q"] = pd.to_numeric(df["distance_to_q"])
+df["distance_to_p"] = df["distance_to_p"].astype(str)
+df["distance_to_q"] = df["distance_to_q"].astype(str)
 df["percent_from_sqrt"] = pd.to_numeric(df["percent_from_sqrt"])
 
 print("Data loaded. Shape:", df.shape)
@@ -31,17 +45,19 @@ Q_PERCENT = 11.5949736567
 
 # Phase 2: Analyze spatial distribution
 
-# Rank by Z5D score (descending, lower score is better)
+# Rank by Z5D score (ascending, lower score is better)
 df_sorted = df.sort_values("z5d_score").reset_index(drop=True)
-df_sorted["min_dist_to_factor"] = np.minimum(
-    df_sorted["distance_to_p"], df_sorted["distance_to_q"]
+df_sorted["min_dist_to_factor_mpz"] = df_sorted.apply(
+    lambda row: min(gmpy2.mpz(row["distance_to_p"]), gmpy2.mpz(row["distance_to_q"])),
+    axis=1,
 )
+df_sorted["min_dist_to_factor"] = df_sorted["min_dist_to_factor_mpz"].apply(float)
 
 
 # Function to compute enrichment
 def compute_enrichment(df_sorted, top_k, target_percent_range):
     """Compute enrichment factor for top-K in target zone"""
-    total_candidates = len(df)
+
     top_k_df = df_sorted.head(top_k)
 
     # Random baseline: uniform in percent_from_sqrt
@@ -102,18 +118,24 @@ plt.title("Z5D Score vs Distance from sqrt(N)")
 plt.axvline(P_PERCENT, color="red", linestyle="--", label=f"p at {P_PERCENT:.1f}%")
 plt.axvline(Q_PERCENT, color="blue", linestyle="--", label=f"q at {Q_PERCENT:.1f}%")
 plt.legend()
-plt.savefig("docs/z5d_score_vs_distance.png")
+plt.savefig(Path(__file__).parent.parent / "docs" / "z5d_score_vs_distance.png")
 plt.show()
 
 # 2. Scatter: Z5D score vs min distance to factor
-df["min_dist_to_factor"] = np.minimum(df["distance_to_p"], df["distance_to_q"])
+# Add min distance using arbitrary precision
+df["min_dist_to_factor_mpz"] = df.apply(
+    lambda row: min(gmpy2.mpz(row["distance_to_p"]), gmpy2.mpz(row["distance_to_q"])),
+    axis=1,
+)
+# For plotting/stats, convert to float (acknowledging precision loss for values > 2^53)
+df["min_dist_to_factor"] = df["min_dist_to_factor_mpz"].apply(float)
 plt.figure(figsize=(10, 6))
 plt.scatter(df["min_dist_to_factor"], df["z5d_score"], alpha=0.1, s=1)
 plt.xlabel("Min Distance to Factor")
 plt.ylabel("Z5D Score")
 plt.title("Z5D Score vs Min Distance to Factor")
 plt.yscale("log")  # since distances are huge
-plt.savefig("docs/z5d_score_vs_min_dist.png")
+plt.savefig(Path(__file__).parent.parent / "docs" / "z5d_score_vs_min_dist.png")
 plt.show()
 
 # 3. Enrichment plot
@@ -126,7 +148,7 @@ plt.ylabel("Enrichment Factor")
 plt.title("Enrichment Factor for Top-K (near factors zone)")
 plt.axhline(1, color="red", linestyle="--", label="No enrichment")
 plt.legend()
-plt.savefig("docs/enrichment_factors.png")
+plt.savefig(Path(__file__).parent.parent / "docs" / "enrichment_factors.png")
 plt.show()
 
 # Phase 3: Statistical validation
@@ -139,7 +161,8 @@ ks_stat, p_value = stats.ks_2samp(
 print(f"KS test Top-1000 vs random: stat={ks_stat:.4f}, p={p_value:.2e}")
 
 # Mann-Whitney: distances for high-Z5D vs random
-# Take top 1000 vs random 1000
+# Note: min_dist_to_factor converted to float, which loses precision for values > 2^53
+# This may affect exact ordering, but relative differences are preserved for statistical purposes
 random_sample = df.sample(1000, random_state=42)
 mann_stat, mann_p = stats.mannwhitneyu(
     top_1000["min_dist_to_factor"],
