@@ -404,6 +404,14 @@ The pipeline maintains sub-200ms execution across all scales.
 
 4. **Single-threaded**: The current implementation is sequential. MPI parallelization would enable larger sample counts at extreme scales.
 
+## Validation Studies
+
+### N127 (Scale 127) Validation
+An experiment was conducted to determine if Z5D resonance scoring concentrates candidate factors near true factors more effectively than random sampling at Scale 127.
+- **Method**: Generated 1,000 prime candidates using Geofac resonance (Sobol seeds) and analyzed correlation between Resonance Amplitude and Z5D Score.
+- **Result**: No significant correlation was found (Pearson R ≈ 0.01). Candidates with high resonance amplitude did not exhibit better Z5D scores than those with low amplitude.
+- **Implication**: At Scale 127, the current resonance metric may not be a predictive filter for Z5D alignment, or the signal-to-noise ratio is too low with the current sample size.
+
 ## Future Work
 
 ### Immediate
