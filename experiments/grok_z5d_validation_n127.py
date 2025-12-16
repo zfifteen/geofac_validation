@@ -110,9 +110,11 @@ def main():
         )
 
     print("Saving results to CSV...")
-    with open(
-        "experiments/z5d_validation_n127_results.csv", "w", newline=""
-    ) as csvfile:
+    output_file = os.path.join(
+        os.path.dirname(__file__), "z5d_validation_n127_results.csv"
+    )
+    print(f"Output file: {output_file}")
+    with open(output_file, "w", newline="") as csvfile:
         fieldnames = [
             "candidate",
             "z5d_score",
@@ -125,7 +127,8 @@ def main():
         for row in results:
             writer.writerow(row)
 
-    print("Done!")
+    print(f"Done! Results saved to: {output_file}")
+    print(f"Total candidates scored: {len(results)}")
 
 
 if __name__ == "__main__":
