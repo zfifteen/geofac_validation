@@ -1,0 +1,76 @@
+{
+  "experiment": "Z5D Validation for N_127",
+  "timestamp": "2025-12-15 22:13:17",
+  "ground_truth": {
+    "N_127": "137524771864208156028430259349934309717",
+    "p": "10508623501177419659",
+    "q": "13086849276577416863",
+    "sqrt_N": "11727095627827384440",
+    "p_offset_pct": -10.3902293058,
+    "q_offset_pct": 11.5949736567
+  },
+  "parameters": {
+    "num_candidates": 100000,
+    "search_min": "10202573196209824463",
+    "search_max": "13251618059444944417",
+    "window_radius": "1524522431617559977",
+    "random_seed": 127
+  },
+  "enrichment_analysis": {
+    "baseline": {
+      "near_p_1pct": 0.06787,
+      "near_q_1pct": 0.08678,
+      "near_any_5pct": 0.54191
+    },
+    "top_k_results": [
+      {
+        "k": 100,
+        "pct_near_p_1pct": 0.0,
+        "pct_near_q_1pct": 0.0,
+        "pct_near_any_5pct": 1.0,
+        "enrichment_p_1pct": 0.0,
+        "enrichment_q_1pct": 0.0,
+        "enrichment_any_5pct": 1.8453248694432656,
+        "avg_dist_nearest": 1.6306759330414026e+17,
+        "min_z5d_score": -4.227119335770744,
+        "max_z5d_score": -4.2271113934477045
+      },
+      {
+        "k": 1000,
+        "pct_near_p_1pct": 0.0,
+        "pct_near_q_1pct": 0.0,
+        "pct_near_any_5pct": 1.0,
+        "enrichment_p_1pct": 0.0,
+        "enrichment_q_1pct": 0.0,
+        "enrichment_any_5pct": 1.8453248694432656,
+        "avg_dist_nearest": 1.4919892728034294e+17,
+        "min_z5d_score": -4.227119335770744,
+        "max_z5d_score": -4.227043263548692
+      },
+      {
+        "k": 10000,
+        "pct_near_p_1pct": 0.0,
+        "pct_near_q_1pct": 0.8678,
+        "pct_near_any_5pct": 1.0,
+        "enrichment_p_1pct": 0.0,
+        "enrichment_q_1pct": 10.0,
+        "enrichment_any_5pct": 1.8453248694432656,
+        "avg_dist_nearest": 7.524233666681542e+16,
+        "min_z5d_score": -4.227119335770744,
+        "max_z5d_score": -4.226377927877422
+      },
+      {
+        "k": 50000,
+        "pct_near_p_1pct": 0.0,
+        "pct_near_q_1pct": 0.17356,
+        "pct_near_any_5pct": 0.53758,
+        "enrichment_p_1pct": 0.0,
+        "enrichment_q_1pct": 2.0,
+        "enrichment_any_5pct": 0.9920097433153106,
+        "avg_dist_nearest": 6.112486414700132e+17,
+        "min_z5d_score": -4.227119335770744,
+        "max_z5d_score": -4.223201451762519
+      }
+    ]
+  }
+}
