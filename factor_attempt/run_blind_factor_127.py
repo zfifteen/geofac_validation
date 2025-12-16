@@ -11,7 +11,6 @@ Usage:
 
 import sys
 import time
-from math import gcd
 from pathlib import Path
 
 import gmpy2
@@ -39,17 +38,35 @@ from z5d_adapter import z5d_n_est, compute_z5d_score
 
 def map_qmc_to_search_range(qmc_samples: np.ndarray) -> list:
     """
-    Map QMC samples from [0,1]^d to candidate integers in [SEARCH_MIN, SEARCH_MAX].
+    Map QMC samples from [0,1)^d to candidate odd integers in [SEARCH_MIN, SEARCH_MAX].
 
-    Uses the first dimension for the primary mapping, other dimensions for scoring.
+    Uses two QMC dimensions to build a 106-bit fixed-point fraction, avoiding float
+    quantization at ~1e19 scales (float64 has ~53 bits of precision).
     """
-    u = qmc_samples[:, 0]
-    search_range = int(SEARCH_MAX - SEARCH_MIN)
+    if qmc_samples.shape[1] < 2:
+        raise ValueError("Need at least 2 QMC dimensions for integer-range mapping")
+
+    search_min = int(SEARCH_MIN)
+    search_max = int(SEARCH_MAX)
+    search_range = search_max - search_min
+
+    scale = 1 << 53
+    denom_bits = 106
 
     candidates = []
-    for val in u:
-        offset = int(val * search_range)
-        candidate = int(SEARCH_MIN) + offset
+    for row in qmc_samples:
+        hi = min(int(row[0] * scale), scale - 1)
+        lo = min(int(row[1] * scale), scale - 1)
+
+        x = (hi << 53) | lo
+        offset = (x * (search_range + 1)) >> denom_bits
+
+        candidate = search_min + offset
+        if candidate & 1 == 0:
+            candidate += 1
+            if candidate > search_max:
+                candidate -= 2
+
         candidates.append(gmpy2.mpz(candidate))
 
     return candidates
