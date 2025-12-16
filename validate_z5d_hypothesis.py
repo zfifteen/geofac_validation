@@ -12,7 +12,7 @@ Ground Truth:
 - q = 13086849276577416863 (at +11.59% from √N)
 
 Three-Phase Experimental Plan:
-1. Generate 1 million candidates within ±13% search window
+1. Generate N candidates within ±13% search window (default: 1M)
 2. Score each with Z5D and analyze spatial distribution of top-ranked candidates
 3. Apply statistical tests (K-S, Mann-Whitney U) to validate significance
 
@@ -111,7 +111,9 @@ def score_candidate(candidate: gmpy2.mpz) -> float:
         n_est = z5d_n_est(str(candidate))
         score = compute_z5d_score(str(candidate), n_est)
         return score
-    except Exception:
+    except Exception as e:
+        import sys
+        print(f"Z5D scoring error for candidate {candidate}: {e}", file=sys.stderr)
         return float('inf')
 
 
@@ -382,7 +384,6 @@ def main():
     top_candidates = scored_candidates[:top_k]
 
     # Compute distances to true factors
-    all_distances = compute_distance_to_factors([c for c, _ in scored_candidates])
     top_distances = compute_distance_to_factors([c for c, _ in top_candidates])
 
     # Random baseline: sample from all candidates
