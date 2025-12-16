@@ -98,8 +98,10 @@ def validate_semiprime(semiprime, num_candidates=100000, random_seed=42):
     zone_min = -12.0
     zone_max = 14.0
 
-    # Baseline: uniform in window (-13% to +13%)
-    baseline_percent = 1.0  # Zone covers entire window
+    # Baseline: expected % in zone assuming uniform distribution
+    zone_width = zone_max - zone_min
+    window_width = 2 * WINDOW_PERCENT  # ±WINDOW_PERCENT
+    baseline_percent = zone_width / window_width
 
     p_percent = float((P - SQRT_N) * 100 / SQRT_N)
     q_percent = float((Q - SQRT_N) * 100 / SQRT_N)
