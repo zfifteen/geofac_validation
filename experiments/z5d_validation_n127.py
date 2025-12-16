@@ -25,7 +25,6 @@ import random
 import json
 from pathlib import Path
 import gmpy2
-import mpmath
 
 # Import from project root
 sys.path.insert(0, str(Path(__file__).parent.parent))
