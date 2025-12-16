@@ -32,8 +32,17 @@ def validate_semiprime(semiprime, num_candidates=100000, random_seed=42):
     SQRT_N = gmpy2.isqrt(N)
     SQRT_N_STR = str(SQRT_N)
 
-    # Window: ±13% around sqrt(N)
-    WINDOW_PERCENT = 13
+    N = gmpy2.mpz(N_str)
+    P = gmpy2.mpz(P_str)
+    Q = gmpy2.mpz(Q_str)
+
+    # Dynamic window strategy: ensure zone is within window
+    p_pct = float((P - SQRT_N) * 100 / SQRT_N)
+    q_pct = float((Q - SQRT_N) * 100 / SQRT_N)
+    zone_min = min(p_pct, q_pct) - 5
+    zone_max = max(p_pct, q_pct) + 5
+    window_radius_pct = max(abs(zone_min), abs(zone_max)) + 5  # 5% margin
+    WINDOW_PERCENT = max(13, int(window_radius_pct))  # At least 13%
     WINDOW_RADIUS = SQRT_N * WINDOW_PERCENT // 100
     SEARCH_MIN = SQRT_N - WINDOW_RADIUS
     SEARCH_MAX = SQRT_N + WINDOW_RADIUS
@@ -150,15 +159,15 @@ def validate_semiprime(semiprime, num_candidates=100000, random_seed=42):
 
 
 if __name__ == "__main__":
-    # Run synthetics
-    from synthetics_data import synthetics
+    # Run RSA challenges
+    from rsa_data import rsa_challenges
 
     summaries = []
-    for sp in synthetics:
+    for sp in rsa_challenges:
         summary = validate_semiprime(sp)
         summaries.append(summary)
         print(json.dumps(summary, indent=2))
 
     # Save summaries
-    with open("experiments/synthetics_test_summaries.json", "w") as f:
+    with open("experiments/rsa_test_summaries_fixed.json", "w") as f:
         json.dump(summaries, f, indent=2)
