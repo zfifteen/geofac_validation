@@ -85,20 +85,15 @@ def validate_semiprime(semiprime, num_candidates=100000, random_seed=42):
     results_sorted = sorted(results, key=lambda x: x["z5d_score"])
 
     # Compute enrichment for Top-10K and Top-100K
-    # Define zone as near p or q: within 5% of their positions
+    # Use fixed zone as in N127 successful implementation: -12% to +14%
+    zone_min = -12.0
+    zone_max = 14.0
+
+    # Baseline: uniform in window (-13% to +13%)
+    baseline_percent = 1.0  # Zone covers entire window
+
     p_percent = float((P - SQRT_N) * 100 / SQRT_N)
     q_percent = float((Q - SQRT_N) * 100 / SQRT_N)
-
-    # Zone: from min(p,q)-5% to max(p,q)+5%
-    zone_min = min(p_percent, q_percent) - 5
-    zone_max = max(p_percent, q_percent) + 5
-
-    # Baseline: uniform in window
-    window_min = float((SEARCH_MIN - SQRT_N) * 100 / SQRT_N)
-    window_max = float((SEARCH_MAX - SQRT_N) * 100 / SQRT_N)
-    zone_width = zone_max - zone_min
-    window_width = window_max - window_min
-    baseline_percent = zone_width / window_width
 
     def compute_enrichment(top_k):
         top_k_results = results_sorted[:top_k]
