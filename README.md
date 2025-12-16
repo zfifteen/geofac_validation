@@ -44,6 +44,17 @@ Unlike traditional big-integer libraries or analytic number theory approaches, t
 
 The Z5D predictor achieves **sub-millionth percent accuracy** at extreme scales, with prediction quality improving asymptotically—exactly as PNT theory predicts.
 
+### Z5D Validation on Ground Truth
+
+Using ground truth factors for N₁₂₇ (1233-digit semiprime), we validated Z5D resonance scoring against random sampling:
+
+- **Hypothesis Tested:** Does Z5D concentrate candidates near true factors better than random?
+- **Result:** Z5D shows strong directional signal, with 5x enrichment near the larger factor (q) but no enrichment near the smaller factor (p).
+- **Statistical Significance:** KS test p < 1e-300; distributions highly non-random.
+- **Interpretation:** Weak-to-strong signal; Z5D provides useful guidance but exhibits asymmetric bias requiring refinement.
+
+See [full validation report](docs/z5d_validation_n127_results.md) for details.
+
 ### Visual Evidence
 
 **Z5D Score vs Scale**: Prediction accuracy improves with scale (lower = better):
