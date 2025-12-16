@@ -256,6 +256,18 @@ Run the full scaling validation:
 
 This tests scales 10^20, 10^100, 10^500, 10^1000, and 10^1233.
 
+### N_127 Z5D Validation (Ground Truth)
+
+Validate whether Z5D alignment scoring enriches candidates near the true factors of a 127-bit semiprime:
+```bash
+python3 experiments/z5d_validation_n127.py --num-candidates 1000000 \
+  --processes 8 \
+  --out-csv artifacts/z5d_validation_n127.csv \
+  --summary-json artifacts/z5d_validation_n127_summary.json
+```
+
+See `docs/z5d_validation_n127_results.md` and `notebooks/z5d_validation_analysis.ipynb`.
+
 ### Custom Analysis
 
 **Generate seeds:**
