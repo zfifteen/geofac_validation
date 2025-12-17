@@ -198,53 +198,69 @@ def unified_geofac_demo(N_str: str) -> tuple[int | None, int | None, dict]:
             )
     balanced_time = time.time() - balanced_start
 
-    # Phase 2: Adaptive window - Z5D scoring
+    # Phase 2: Adaptive window with iterative expansion
     adaptive_start = time.time()
-    window_radius = (sqrt_N * 13) // 100
-    search_min = sqrt_N - window_radius
-    search_max = sqrt_N + window_radius
+    window_schedule = [13, 20, 30, 50, 75, 100, 150, 200, 300]  # percentages
+    best_overall_score = None
+    total_candidates_tested = 0
+    windows_exhausted = 0
 
-    num_candidates = 10000
-    candidates = []
-    random.seed(127)
-    space_size = search_max - search_min
+    for window_pct in window_schedule:
+        window_radius = (sqrt_N * window_pct) // 100
+        search_min = sqrt_N - window_radius
+        search_max = sqrt_N + window_radius
 
-    for _ in range(num_candidates):
-        offset = random.randrange(0, space_size)
-        candidate = search_min + offset
-        if candidate % 2 == 0:
-            candidate += 1
-        if candidate > search_max:
-            candidate = search_max if search_max % 2 == 1 else search_max - 1
-        candidates.append(gmpy2.mpz(candidate))
+        # Generate candidates for THIS window
+        num_candidates = 10000
+        candidates = []
+        random.seed(127 + window_pct)  # Different seed per window
+        space_size = search_max - search_min
 
-    # Score candidates
-    scored = []
-    for c in candidates:
-        n_est = z5d_n_est(str(c))
-        score = compute_z5d_score(str(c), n_est)
-        scored.append((score, int(c)))
+        for _ in range(num_candidates):
+            offset = random.randrange(0, space_size)
+            candidate = search_min + offset
+            if candidate % 2 == 0:
+                candidate += 1
+            if candidate > search_max:
+                candidate = search_max if search_max % 2 == 1 else search_max - 1
+            candidates.append(gmpy2.mpz(candidate))
 
-    # Sort by score (lower better)
-    scored.sort(key=lambda x: x[0])
+        # Score candidates
+        scored = []
+        for c in candidates:
+            n_est = z5d_n_est(str(c))
+            score = compute_z5d_score(str(c), n_est)
+            scored.append((score, int(c)))
 
-    # Test top 100
-    for score, c in scored[:100]:
-        if N % c == 0:
-            q = int(N // c)
-            adaptive_time = time.time() - adaptive_start
-            return (
-                min(c, q),
-                max(c, q),
-                {
-                    "balanced_candidates": balanced_candidates,
-                    "balanced_time": balanced_time,
-                    "adaptive_candidates": len(scored),
-                    "adaptive_time": adaptive_time,
-                    "best_score": scored[0][0],
-                },
-            )
+        scored.sort(key=lambda x: x[0])
+        total_candidates_tested += len(scored)
 
+        # Track best score
+        if scored and (best_overall_score is None or scored[0][0] < best_overall_score):
+            best_overall_score = scored[0][0]
+
+        # Test top 100 for divisibility
+        for score, c in scored[:100]:
+            if N % c == 0:
+                q = int(N // c)
+                adaptive_time = time.time() - adaptive_start
+                return (
+                    min(c, q),
+                    max(c, q),
+                    {
+                        "balanced_candidates": balanced_candidates,
+                        "balanced_time": balanced_time,
+                        "adaptive_candidates": total_candidates_tested,
+                        "adaptive_time": adaptive_time,
+                        "best_score": best_overall_score,
+                        "window_used": f"{window_pct}%",
+                        "windows_exhausted": windows_exhausted + 1
+                    },
+                )
+
+        windows_exhausted += 1
+
+    # All windows exhausted without finding factor
     adaptive_time = time.time() - adaptive_start
     return (
         None,
@@ -252,9 +268,10 @@ def unified_geofac_demo(N_str: str) -> tuple[int | None, int | None, dict]:
         {
             "balanced_candidates": balanced_candidates,
             "balanced_time": balanced_time,
-            "adaptive_candidates": len(scored),
+            "adaptive_candidates": total_candidates_tested,
             "adaptive_time": adaptive_time,
-            "best_score": scored[0][0] if scored else None,
+            "best_score": best_overall_score,
+            "windows_exhausted": windows_exhausted
         },
     )
 
@@ -281,13 +298,16 @@ if __name__ == "__main__":
         print("Success")
         print(f"Factor pair: {p}, {q}")
         print(f"Verification: {p} * {q} = {p * q}")
-        print(
-            f"Balanced phase: {metadata['balanced_candidates']} candidates scanned in {metadata['balanced_time']:.4f}s"
-        )
-        print(
-            f"Adaptive phase: {metadata['adaptive_candidates']} candidates generated, top 100 tested in {metadata['adaptive_time']:.4f}s"
-        )
-        if metadata["best_score"] is not None:
+        print(f"Balanced phase: {metadata['balanced_candidates']} candidates scanned in {metadata['balanced_time']:.4f}s")
+        print(f"Adaptive phase: {metadata['adaptive_candidates']} total candidates across {metadata.get('window_used', 'all')} windows in {metadata['adaptive_time']:.4f}s")
+        if metadata['best_score'] is not None:
+            print(f"Best Z5D score: {metadata['best_score']:.4f}")
+    else:
+        print("Failure")
+        print("No factor found within limits")
+        print(f"Balanced phase: {metadata['balanced_candidates']} candidates scanned in {metadata['balanced_time']:.4f}s")
+        print(f"Adaptive phase: {metadata['adaptive_candidates']} total candidates across {metadata.get('windows_exhausted', 0)} windows in {metadata['adaptive_time']:.4f}s")
+        if metadata['best_score'] is not None:
             print(f"Best Z5D score: {metadata['best_score']:.4f}")
     else:
         print("Failure")
