@@ -254,7 +254,7 @@ def unified_geofac_demo(N_str: str) -> tuple[int | None, int | None, dict]:
                         "adaptive_time": adaptive_time,
                         "best_score": best_overall_score,
                         "window_used": f"{window_pct}%",
-                        "windows_exhausted": windows_exhausted + 1
+                        "windows_exhausted": windows_exhausted + 1,
                     },
                 )
 
@@ -271,7 +271,7 @@ def unified_geofac_demo(N_str: str) -> tuple[int | None, int | None, dict]:
             "adaptive_candidates": total_candidates_tested,
             "adaptive_time": adaptive_time,
             "best_score": best_overall_score,
-            "windows_exhausted": windows_exhausted
+            "windows_exhausted": windows_exhausted,
         },
     )
 
@@ -298,16 +298,13 @@ if __name__ == "__main__":
         print("Success")
         print(f"Factor pair: {p}, {q}")
         print(f"Verification: {p} * {q} = {p * q}")
-        print(f"Balanced phase: {metadata['balanced_candidates']} candidates scanned in {metadata['balanced_time']:.4f}s")
-        print(f"Adaptive phase: {metadata['adaptive_candidates']} total candidates across {metadata.get('window_used', 'all')} windows in {metadata['adaptive_time']:.4f}s")
-        if metadata['best_score'] is not None:
-            print(f"Best Z5D score: {metadata['best_score']:.4f}")
-    else:
-        print("Failure")
-        print("No factor found within limits")
-        print(f"Balanced phase: {metadata['balanced_candidates']} candidates scanned in {metadata['balanced_time']:.4f}s")
-        print(f"Adaptive phase: {metadata['adaptive_candidates']} total candidates across {metadata.get('windows_exhausted', 0)} windows in {metadata['adaptive_time']:.4f}s")
-        if metadata['best_score'] is not None:
+        print(
+            f"Balanced phase: {metadata['balanced_candidates']} candidates scanned in {metadata['balanced_time']:.4f}s"
+        )
+        print(
+            f"Adaptive phase: {metadata['adaptive_candidates']} total candidates across {metadata.get('window_used', 'all')} windows in {metadata['adaptive_time']:.4f}s"
+        )
+        if metadata["best_score"] is not None:
             print(f"Best Z5D score: {metadata['best_score']:.4f}")
     else:
         print("Failure")
@@ -316,7 +313,7 @@ if __name__ == "__main__":
             f"Balanced phase: {metadata['balanced_candidates']} candidates scanned in {metadata['balanced_time']:.4f}s"
         )
         print(
-            f"Adaptive phase: {metadata['adaptive_candidates']} candidates generated, top 100 tested in {metadata['adaptive_time']:.4f}s"
+            f"Adaptive phase: {metadata['adaptive_candidates']} total candidates across {metadata.get('windows_exhausted', 0)} windows in {metadata['adaptive_time']:.4f}s"
         )
         if metadata["best_score"] is not None:
             print(f"Best Z5D score: {metadata['best_score']:.4f}")
