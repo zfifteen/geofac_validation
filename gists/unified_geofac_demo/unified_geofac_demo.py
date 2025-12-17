@@ -239,8 +239,8 @@ def unified_geofac_demo(N_str: str) -> tuple[int | None, int | None, dict]:
         if scored and (best_overall_score is None or scored[0][0] < best_overall_score):
             best_overall_score = scored[0][0]
 
-        # Test top 100 for divisibility
-        for score, c in scored[:100]:
+        # Test top 10000 for divisibility (Z5D is heuristic, factors may not be in top 100)
+        for score, c in scored[:10000]:
             if N % c == 0:
                 q = int(N // c)
                 adaptive_time = time.time() - adaptive_start
