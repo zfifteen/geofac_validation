@@ -211,7 +211,7 @@ def unified_geofac_demo(N_str: str) -> tuple[int | None, int | None, dict]:
         search_max = sqrt_N + window_radius
 
         # Generate candidates for THIS window
-        num_candidates = 10000
+        num_candidates = 100000
         candidates = []
         random.seed(127 + window_pct)  # Different seed per window
         space_size = search_max - search_min
