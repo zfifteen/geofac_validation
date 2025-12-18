@@ -220,13 +220,14 @@ def unified_geofac_demo(N_str: str) -> tuple[int | None, int | None, dict]:
         random.seed(127 + window_pct)  # Different seed per window
         space_size = search_max - search_min
 
+        # Calculate odd-only bounds for uniform sampling over odds
+        search_min_odd = search_min if search_min % 2 == 1 else search_min + 1
+        search_max_odd = search_max if search_max % 2 == 1 else search_max - 1
+        total_odds = ((search_max_odd - search_min_odd) // 2) + 1
+
         for _ in range(num_candidates):
-            offset = random.randrange(0, space_size)
-            candidate = search_min + offset
-            if candidate % 2 == 0:
-                candidate += 1
-            if candidate > search_max:
-                candidate = search_max if search_max % 2 == 1 else search_max - 1
+            k = random.randrange(total_odds)
+            candidate = search_min_odd + (2 * k)
             candidates.append(gmpy2.mpz(candidate))
 
         # Score candidates
