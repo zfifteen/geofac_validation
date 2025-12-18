@@ -15,6 +15,7 @@ Requirements: numpy, scipy, gmpy2, mpmath
 import sys
 import time
 import random
+import argparse
 import numpy as np
 import gmpy2
 import mpmath
@@ -154,7 +155,9 @@ def compute_geometric_resonance(
 
 
 # Unified demo function
-def unified_geofac_demo(N_str: str) -> tuple[int | None, int | None, dict]:
+def unified_geofac_demo(
+    N_str: str, verbose: bool = False, log_csv: str = None
+) -> tuple[int | None, int | None, dict]:
     N = gmpy2.mpz(N_str)
     if N % 2 == 0:
         return (
@@ -211,24 +214,58 @@ def unified_geofac_demo(N_str: str) -> tuple[int | None, int | None, dict]:
         search_max = sqrt_N + window_radius
 
         # Generate candidates for THIS window
-        # Match validation experiment density: 1M for critical ±13% window, 100K for others
+        # Match validation experiment density: 1M for ±13% window, 100K for others
         if window_pct == 13:
             num_candidates = 1000000  # 1M for ±13% window
         else:
             num_candidates = 100000  # 100K for wider windows
-        candidates = []
-        random.seed(127 + window_pct)  # Different seed per window
-        space_size = search_max - search_min
+
+        # DIAGNOSTIC: Log window bounds
+        if verbose:
+            print(f"\n[Window ±{window_pct}%]", file=sys.stderr)
+            print(f"  Range: [{int(search_min)}, {int(search_max)}]", file=sys.stderr)
+            print(f"  Width: {int(search_max - search_min)}", file=sys.stderr)
+            print(f"  Generating {num_candidates:,} candidates...", file=sys.stderr)
 
         # Calculate odd-only bounds for uniform sampling over odds
         search_min_odd = search_min if search_min % 2 == 1 else search_min + 1
         search_max_odd = search_max if search_max % 2 == 1 else search_max - 1
         total_odds = ((search_max_odd - search_min_odd) // 2) + 1
 
+        if verbose:
+            print(f"  Odd candidates in window: {total_odds:,}", file=sys.stderr)
+            print(
+                f"  Sampling ratio: {num_candidates}/{total_odds} = {100 * num_candidates / total_odds:.4f}%",
+                file=sys.stderr,
+            )
+
+        candidates = []
+        random.seed(127 + window_pct)
+
         for _ in range(num_candidates):
             k = random.randrange(total_odds)
             candidate = search_min_odd + (2 * k)
             candidates.append(gmpy2.mpz(candidate))
+
+        # DIAGNOSTIC: Check if true factors in candidate set (for N_127)
+        if verbose and N == gmpy2.mpz("137524771864208156028430259349934309717"):
+            P_127 = gmpy2.mpz("10508623501177419659")
+            Q_127 = gmpy2.mpz("13086849276577416863")
+
+            p_in_window = search_min <= P_127 <= search_max
+            q_in_window = search_min <= Q_127 <= search_max
+            p_sampled = P_127 in candidates
+            q_sampled = Q_127 in candidates
+
+            print(f"  True factors:", file=sys.stderr)
+            print(
+                f"    p={int(P_127)}: in_window={p_in_window}, sampled={p_sampled}",
+                file=sys.stderr,
+            )
+            print(
+                f"    q={int(Q_127)}: in_window={q_in_window}, sampled={q_sampled}",
+                file=sys.stderr,
+            )
 
         # Score candidates
         scored = []
@@ -237,12 +274,39 @@ def unified_geofac_demo(N_str: str) -> tuple[int | None, int | None, dict]:
             score = compute_z5d_score(str(c), n_est)
             scored.append((score, int(c)))
 
-        scored.sort(key=lambda x: x[0])
-        total_candidates_tested += len(scored)
+    scored.sort(key=lambda x: x[0])
+    total_candidates_tested += len(scored)
 
-        # Track best score
-        if scored and (best_overall_score is None or scored[0][0] < best_overall_score):
-            best_overall_score = scored[0][0]
+    # Track best score
+    if scored and (best_overall_score is None or scored[0][0] < best_overall_score):
+        best_overall_score = scored[0][0]
+
+    # DIAGNOSTIC: Log score statistics
+    if verbose:
+        print(
+            f"  Score range: [{scored[0][0]:.4f}, {scored[-1][0]:.4f}]", file=sys.stderr
+        )
+        print(
+            f"  Testing top {min(10000, len(scored))} for divisibility...",
+            file=sys.stderr,
+        )
+
+        # Check where true factors rank (for N_127)
+        if N == gmpy2.mpz("137524771864208156028430259349934309717"):
+            P_127 = gmpy2.mpz("10508623501177419659")
+            Q_127 = gmpy2.mpz("13086849276577416863")
+            if P_127 in candidates or Q_127 in candidates:
+                for rank, (score, c) in enumerate(scored):
+                    if c == int(P_127):
+                        print(
+                            f"    ⚠ p ranked #{rank + 1} with score {score:.4f}",
+                            file=sys.stderr,
+                        )
+                    if c == int(Q_127):
+                        print(
+                            f"    ⚠ q ranked #{rank + 1} with score {score:.4f}",
+                            file=sys.stderr,
+                        )
 
         # Test top 10000 for divisibility, with local search around each (Z5D enriches near factors)
         for score, c in scored[:10000]:
@@ -307,12 +371,19 @@ def unified_geofac_demo(N_str: str) -> tuple[int | None, int | None, dict]:
 
 # Main
 if __name__ == "__main__":
-    if len(sys.argv) != 2:
-        print("Usage: python unified_geofac_demo.py N")
-        print("N: semiprime to factor")
-        sys.exit(1)
+    parser = argparse.ArgumentParser(
+        description="Unified GeoFac Demo: Blind semiprime factorization"
+    )
+    parser.add_argument("N", type=str, help="Semiprime to factor")
+    parser.add_argument(
+        "--verbose", "-v", action="store_true", help="Enable verbose diagnostic logging"
+    )
+    parser.add_argument(
+        "--log-csv", type=str, help="Save per-window candidate stats to CSV"
+    )
+    args = parser.parse_args()
 
-    N_str = sys.argv[1]
+    N_str = args.N
     try:
         int(N_str)
     except ValueError:
@@ -320,21 +391,29 @@ if __name__ == "__main__":
         sys.exit(1)
 
     start_time = time.time()
-    p, q, metadata = unified_geofac_demo(N_str)
+    p, q, metadata = unified_geofac_demo(
+        N_str, verbose=args.verbose, log_csv=args.log_csv
+    )
     end_time = time.time()
 
     if p is not None and q is not None:
         print("Success")
         print(f"Factor pair: {p}, {q}")
         print(f"Verification: {p} * {q} = {p * q}")
-        print(
-            f"Balanced phase: {metadata['balanced_candidates']} candidates scanned in {metadata['balanced_time']:.4f}s"
-        )
-        print(
-            f"Adaptive phase: {metadata['adaptive_candidates']} total candidates across {metadata.get('window_used', 'all')} windows in {metadata['adaptive_time']:.4f}s"
-        )
-        if metadata["best_score"] is not None:
+        print(f"Balanced phase: {metadata['balanced_candidates']} candidates scanned in {metadata['balanced_time']:.4f}s")
+        print(f"Adaptive phase: {metadata['adaptive_candidates']} total candidates across {metadata.get('window_used', 'all')} windows in {metadata['adaptive_time']:.4f}s")
+        if metadata['best_score'] is not None:
             print(f"Best Z5D score: {metadata['best_score']:.4f}")
+    else:
+        print("Failure")
+        print("No factor found within limits")
+        print(f"\nDiagnostics:")
+        print(f"  N = {N_str}")
+        print(f"  √N ≈ {int(gmpy2.isqrt(gmpy2.mpz(N_str)))}")
+        print(f"  Total candidates tested: {metadata['adaptive_candidates']:,}")
+        print(f"  Best Z5D score: {metadata['best_score']:.4f}")
+        print(f"  Windows searched: {metadata.get('windows_exhausted', 0)}")
+        print(f"\nTo debug, run with: --verbose --log-csv debug.csv")
     else:
         print("Failure")
         print("No factor found within limits")
