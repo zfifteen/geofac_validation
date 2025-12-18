@@ -215,7 +215,7 @@ def unified_geofac_demo(N_str: str) -> tuple[int | None, int | None, dict]:
         if window_pct == 13:
             num_candidates = 1000000  # 1M for ±13% window
         else:
-            num_candidates = 100000   # 100K for wider windows
+            num_candidates = 100000  # 100K for wider windows
         candidates = []
         random.seed(127 + window_pct)  # Different seed per window
         space_size = search_max - search_min
