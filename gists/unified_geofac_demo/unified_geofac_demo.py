@@ -233,9 +233,9 @@ def unified_geofac_demo(
         total_odds = ((search_max_odd - search_min_odd) // 2) + 1
 
         if verbose:
-            print(f"  Odd candidates in window: {total_odds:,}", file=sys.stderr)
+            print(f"  Odd candidates in window: {int(total_odds):,}", file=sys.stderr)
             print(
-                f"  Sampling ratio: {num_candidates}/{total_odds} = {100 * num_candidates / total_odds:.4f}%",
+                f"  Sampling ratio: {num_candidates}/{int(total_odds)} = {100 * num_candidates / int(total_odds):.4f}%",
                 file=sys.stderr,
             )
 
