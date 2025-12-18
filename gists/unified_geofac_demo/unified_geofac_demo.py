@@ -400,9 +400,13 @@ if __name__ == "__main__":
         print("Success")
         print(f"Factor pair: {p}, {q}")
         print(f"Verification: {p} * {q} = {p * q}")
-        print(f"Balanced phase: {metadata['balanced_candidates']} candidates scanned in {metadata['balanced_time']:.4f}s")
-        print(f"Adaptive phase: {metadata['adaptive_candidates']} total candidates across {metadata.get('window_used', 'all')} windows in {metadata['adaptive_time']:.4f}s")
-        if metadata['best_score'] is not None:
+        print(
+            f"Balanced phase: {metadata['balanced_candidates']} candidates scanned in {metadata['balanced_time']:.4f}s"
+        )
+        print(
+            f"Adaptive phase: {metadata['adaptive_candidates']} total candidates across {metadata.get('window_used', 'all')} windows in {metadata['adaptive_time']:.4f}s"
+        )
+        if metadata["best_score"] is not None:
             print(f"Best Z5D score: {metadata['best_score']:.4f}")
     else:
         print("Failure")
@@ -414,14 +418,3 @@ if __name__ == "__main__":
         print(f"  Best Z5D score: {metadata['best_score']:.4f}")
         print(f"  Windows searched: {metadata.get('windows_exhausted', 0)}")
         print(f"\nTo debug, run with: --verbose --log-csv debug.csv")
-    else:
-        print("Failure")
-        print("No factor found within limits")
-        print(
-            f"Balanced phase: {metadata['balanced_candidates']} candidates scanned in {metadata['balanced_time']:.4f}s"
-        )
-        print(
-            f"Adaptive phase: {metadata['adaptive_candidates']} total candidates across {metadata.get('windows_exhausted', 0)} windows in {metadata['adaptive_time']:.4f}s"
-        )
-        if metadata["best_score"] is not None:
-            print(f"Best Z5D score: {metadata['best_score']:.4f}")
