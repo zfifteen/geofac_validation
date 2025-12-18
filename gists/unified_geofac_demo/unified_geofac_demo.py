@@ -244,8 +244,9 @@ def unified_geofac_demo(N_str: str) -> tuple[int | None, int | None, dict]:
         if scored and (best_overall_score is None or scored[0][0] < best_overall_score):
             best_overall_score = scored[0][0]
 
-        # Test top 10000 for divisibility (Z5D is heuristic, factors may not be in top 100)
+        # Test top 10000 for divisibility, with local search around each (Z5D enriches near factors)
         for score, c in scored[:10000]:
+            # Check the candidate itself
             if N % c == 0:
                 q = int(N // c)
                 adaptive_time = time.time() - adaptive_start
@@ -262,6 +263,29 @@ def unified_geofac_demo(N_str: str) -> tuple[int | None, int | None, dict]:
                         "windows_exhausted": windows_exhausted + 1,
                     },
                 )
+            # Local search: check ±20 nearby odds for divisibility
+            for offset in range(-20, 21):
+                if offset == 0:
+                    continue
+                nearby = c + 2 * offset  # stay on odds
+                if nearby < search_min or nearby > search_max:
+                    continue
+                if N % nearby == 0:
+                    q = int(N // nearby)
+                    adaptive_time = time.time() - adaptive_start
+                    return (
+                        min(nearby, q),
+                        max(nearby, q),
+                        {
+                            "balanced_candidates": balanced_candidates,
+                            "balanced_time": balanced_time,
+                            "adaptive_candidates": total_candidates_tested,
+                            "adaptive_time": adaptive_time,
+                            "best_score": best_overall_score,
+                            "window_used": f"{window_pct}%",
+                            "windows_exhausted": windows_exhausted + 1,
+                        },
+                    )
 
         windows_exhausted += 1
 
