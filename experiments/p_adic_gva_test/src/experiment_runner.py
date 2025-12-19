@@ -22,9 +22,15 @@ import math
 from pathlib import Path
 from typing import List, Dict, Tuple, Optional
 
-# Import our local metrics
-from metric_baseline import compute_gva_score as baseline_score
-from metric_padic import padic_ultrametric_gva_score as padic_score
+# Import our local metrics - support both relative and direct execution
+try:
+    # When run as module: python -m experiments.p_adic_gva_test.src.experiment_runner
+    from .metric_baseline import compute_gva_score as baseline_score
+    from .metric_padic import padic_ultrametric_gva_score as padic_score
+except ImportError:
+    # When run directly: python experiment_runner.py
+    from metric_baseline import compute_gva_score as baseline_score
+    from metric_padic import padic_ultrametric_gva_score as padic_score
 
 
 # Toy semiprimes for testing (RSA-100 to RSA-200 range)
