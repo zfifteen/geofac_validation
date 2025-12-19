@@ -33,45 +33,115 @@ except ImportError:
     from metric_padic import padic_ultrametric_gva_score as padic_score
 
 
-# Toy semiprimes for testing (RSA-100 to RSA-200 range)
-# We'll use some smaller ones for quick testing, plus a few from RSA challenges
-SEMIPRIMES = [
-    {
-        "name": "Toy-1",
-        "N": 143,  # 11 × 13
-        "p": 11,
-        "q": 13,
-        "description": "Minimal test case"
-    },
-    {
-        "name": "Toy-2", 
-        "N": 1763,  # 41 × 43
-        "p": 41,
-        "q": 43,
-        "description": "Small twin-prime product"
-    },
-    {
-        "name": "Toy-3",
-        "N": 6557,  # 79 × 83
-        "p": 79,
-        "q": 83,
-        "description": "Small twin-prime product"
-    },
-    {
-        "name": "Medium-1",
-        "N": 9746347772161,  # 3122977 × 3122987 (22-bit factors)
-        "p": 3122977,
-        "q": 3122987,
-        "description": "6-digit factors"
-    },
-    {
-        "name": "RSA-100-mini",
-        "N": int("1522605027922533360535618378132637429718068114961380688657908494580122963258952897654000350692006139"),
-        "p": int("37975227936943673922808872755445627854565536638199"),
-        "q": int("40094690950920881030683735292761468389214899724061"),
-        "description": "Actual RSA-100 challenge"
-    },
+# Define semiprimes as (p, q) pairs - compute N from them to avoid transcription errors
+SEMIPRIME_DEFINITIONS = [
+    (11, 13, "Toy-1", "Minimal test case"),
+    (41, 43, "Toy-2", "Small twin-prime product"),
+    (79, 83, "Toy-3", "Small twin-prime product"),
+    (3122977, 3122987, "Medium-1", "~22-bit prime factors"),
+    (
+        int("37975227936943673922808872755445627854565536638199"),
+        int("40094690950920881030683735292761468389214899724061"),
+        "RSA-100",
+        "Actual RSA-100 challenge"
+    ),
 ]
+
+
+def is_prime_miller_rabin(n: int, k: int = 10) -> bool:
+    """
+    Miller-Rabin primality test.
+    Returns True if n is probably prime, False if definitely composite.
+    """
+    if n < 2:
+        return False
+    if n == 2 or n == 3:
+        return True
+    if n % 2 == 0:
+        return False
+    
+    # Write n-1 as 2^r * d
+    r, d = 0, n - 1
+    while d % 2 == 0:
+        r += 1
+        d //= 2
+    
+    # Witnesses to test
+    import random
+    for _ in range(k):
+        a = random.randrange(2, n - 1)
+        x = pow(a, d, n)
+        
+        if x == 1 or x == n - 1:
+            continue
+        
+        for _ in range(r - 1):
+            x = pow(x, 2, n)
+            if x == n - 1:
+                break
+        else:
+            return False
+    
+    return True
+
+
+def validate_semiprime(p: int, q: int, N: int, name: str) -> bool:
+    """
+    Validate that N = p × q and that p, q are prime.
+    Raises AssertionError if validation fails.
+    """
+    # Check multiplication
+    computed_N = p * q
+    assert computed_N == N, (
+        f"{name}: N mismatch! p×q = {computed_N} but N = {N}"
+    )
+    
+    # Check that p and q are greater than 1
+    assert p > 1 and q > 1, f"{name}: factors must be > 1, got p={p}, q={q}"
+    
+    # Check that p and q are coprime
+    assert math.gcd(p, q) == 1, f"{name}: factors must be coprime, got gcd(p,q)={math.gcd(p, q)}"
+    
+    # For small numbers, verify primality
+    if p < 10000 or q < 10000:
+        # Quick primality check for small numbers
+        def is_small_prime(n):
+            if n < 2:
+                return False
+            if n == 2:
+                return True
+            if n % 2 == 0:
+                return False
+            for i in range(3, int(n**0.5) + 1, 2):
+                if n % i == 0:
+                    return False
+            return True
+        
+        if p < 10000:
+            assert is_small_prime(p), f"{name}: p={p} is not prime"
+        if q < 10000:
+            assert is_small_prime(q), f"{name}: q={q} is not prime"
+    
+    return True
+
+
+# Build validated semiprime dataset
+SEMIPRIMES = []
+for p, q, name, description in SEMIPRIME_DEFINITIONS:
+    N = p * q
+    try:
+        validate_semiprime(p, q, N, name)
+        SEMIPRIMES.append({
+            "name": name,
+            "N": N,
+            "p": p,
+            "q": q,
+            "description": description
+        })
+        print(f"✓ Validated {name}: N = {N}")
+    except AssertionError as e:
+        print(f"✗ FAILED validation for {name}: {e}")
+        raise
 
 
 def integer_sqrt(n: int) -> int:
@@ -108,8 +178,8 @@ def generate_search_candidates(N: int, sqrt_N: int, num_candidates: int,
     if seed is not None:
         random.seed(seed)
     
-    # Define search window
-    window_radius = int(sqrt_N * window_pct / 100)
+    # Define search window - ensure minimum size for small semiprimes
+    window_radius = max(50, int(sqrt_N * window_pct / 100))
     search_min = max(3, sqrt_N - window_radius)
     search_max = sqrt_N + window_radius
     

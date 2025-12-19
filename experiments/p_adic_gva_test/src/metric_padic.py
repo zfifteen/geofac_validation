@@ -207,12 +207,15 @@ def padic_ultrametric_gva_score(candidate: int, reference: int, N: int = None) -
     Combines:
     1. Multi-prime p-adic distances
     2. Divisibility structure analysis
-    3. Optional N-specific adjustments
+    
+    IMPORTANT: This function does NOT compute gcd(candidate, N) to avoid metric leakage.
+    The scoring must be independent of whether the candidate is actually a factor.
     
     Args:
         candidate: Candidate factor value
         reference: Reference point (typically sqrt(N))
-        N: Optional semiprime being factored
+        N: Optional semiprime being factored (ONLY used for p-adic structure analysis,
+           NOT for direct divisibility testing)
         
     Returns:
         p-adic GVA score (lower is better)
@@ -220,16 +223,11 @@ def padic_ultrametric_gva_score(candidate: int, reference: int, N: int = None) -
     # Base score from adaptive p-adic metric
     base_score = adaptive_padic_score(candidate, reference)
     
-    # If N is provided, add N-specific adjustments
+    # If N is provided, analyze p-adic structure (but DO NOT test divisibility)
     if N is not None:
-        # Check if candidate shares factors with N
-        gcd_N = math.gcd(candidate, N)
-        if gcd_N > 1 and gcd_N < N:
-            # Strong bonus if we found a factor!
-            return -1000.0 + base_score
-        
-        # Analyze p-adic structure relative to N
-        # Candidates that are "p-adically close" to factors should score well
+        # Analyze p-adic structure: compare small prime factorizations
+        # This is legitimate because we're looking at structural similarity,
+        # not testing if candidate divides N
         N_factors = prime_factorization_small(N, max_prime=100)
         candidate_factors = prime_factorization_small(candidate, max_prime=100)
         
