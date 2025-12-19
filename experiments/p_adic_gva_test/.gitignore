@@ -1,8 +1,8 @@
 # Ignore all CSV result files
 results/*.csv
 
-# Except keep one example
-!results/padic_gva_results_20251219_000943.csv
+# Except keep the example
+!results/example_results.csv
 
 # Ignore Python cache
 __pycache__/

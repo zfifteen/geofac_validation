@@ -138,6 +138,24 @@ Plus a final summary table comparing performance.
 
 ## Implementation Notes
 
+### Dataset Validation
+
+All semiprimes are validated on startup with the following checks:
+- **Multiplication check**: `assert N == p × q`
+- **Coprimality**: `assert gcd(p, q) == 1`
+- **Primality**: For small factors (< 10,000), verified using trial division
+
+This prevents transcription errors and ensures the experiment operates on valid semiprimes. The validation runs automatically when importing `experiment_runner.py`.
+
+### Metric Integrity (No Leakage)
+
+**Critical design principle**: Neither metric computes `gcd(candidate, N)` or tests divisibility during scoring. This ensures:
+- Scores reflect geometric/arithmetic structure, not direct factor testing
+- Fair comparison between metrics
+- Meaningful results (not just "which metric cheats better")
+
+The GCD test is ONLY performed after scoring to check if top-ranked candidates are actual factors.
+
 ### Baseline Metric (metric_baseline.py)
 
 The baseline metric is a **self-contained copy** of the existing Z5D scoring logic:
@@ -197,7 +215,8 @@ Orchestrates the full experiment:
 - **Small sample**: This is a toy experiment with limited test cases
 - **One-factor goal**: We stop at the first factor found
 - **Simple search**: No adaptive windowing or sophisticated sampling
-- **No ground-truth distance**: We only test via GCD, not by comparing to true factors
+- **Uniform random sampling limitation**: For large semiprimes like RSA-100, the probability of randomly sampling the exact factors is astronomically small (≈10^-47). The failure on RSA-100 is expected and does not indicate metric quality - it reflects the sampling strategy limitation.
+- **Window coverage vs sampling density**: For RSA-100, the ±15% window around √N contains both factors, but 500 random samples cannot densely cover this space. Success on small semiprimes (N < 10^13) is due to dense sampling relative to window size.
 
 This is an **exploratory experiment** to motivate deeper investigation, not a rigorous benchmark.
 
