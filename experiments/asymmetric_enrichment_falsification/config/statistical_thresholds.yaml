@@ -55,11 +55,9 @@ significance:
 # Decision thresholds
 decision:
   falsified: 
-    min_criteria_failed: 2
-    confidence: 0.95
-  partially_confirmed:
-    criteria_failed: 1
-    confidence: 0.70
+    min_criteria_failed: 1  # Per spec: "any of the following conditions"
+    confidence_2plus: 0.95  # 2+ failures
+    confidence_1: 0.85      # 1 failure
   confirmed:
     criteria_failed: 0
     min_p_value: 0.01
@@ -68,5 +66,6 @@ decision:
     confidence: 0.50
 
 metadata:
-  reference: "Technical Specification Section 3"
+  reference: "Technical Specification Section 1 - Falsification Criteria"
   correction_method: "Bonferroni for multiple comparisons"
+  note: "Original spec states hypothesis falsified if ANY ONE condition met"

@@ -128,7 +128,7 @@ def generate_qmc_candidates_sobol(
     return candidates
 
 
-def score_candidates_z5d(candidates: List[mpz], N: mpz) -> List[Tuple[mpz, float]]:
+def score_candidates_z5d(candidates: List[mpz], N: mpz) -> Tuple[List[Tuple[mpz, float]], int]:
     """
     Score all candidates using Z5D geometric resonance metric.
     
@@ -137,9 +137,12 @@ def score_candidates_z5d(candidates: List[mpz], N: mpz) -> List[Tuple[mpz, float
         N: Semiprime N = p × q
     
     Returns:
-        List of (candidate, score) tuples
+        Tuple of (scored_candidates, failure_count)
+        - scored_candidates: List of (candidate, score) tuples
+        - failure_count: Number of candidates that failed scoring
     """
     scored = []
+    failures = 0
     
     for c in candidates:
         try:
@@ -151,10 +154,21 @@ def score_candidates_z5d(candidates: List[mpz], N: mpz) -> List[Tuple[mpz, float
             
             scored.append((c, score))
         except Exception as e:
-            # Skip candidates that fail scoring
+            # Log failure and skip candidate
+            failures += 1
+            # Only log first 10 failures to avoid spam
+            if failures <= 10:
+                print(f"  Warning: Z5D scoring failed for candidate {c}: {type(e).__name__}")
             continue
     
-    return scored
+    # Check if too many failures
+    if len(candidates) > 0:
+        failure_rate = failures / len(candidates)
+        if failure_rate > 0.1:
+            print(f"  WARNING: {failure_rate*100:.1f}% of candidates failed scoring ({failures}/{len(candidates)})")
+            print(f"  This may indicate data quality issues or computational errors.")
+    
+    return scored, failures
 
 
 def extract_top_candidates(
@@ -270,7 +284,14 @@ def run_z5d_enrichment_trial(
     )
     
     # Score all candidates with Z5D
-    scored_candidates = score_candidates_z5d(candidates, N)
+    scored_candidates, failures = score_candidates_z5d(candidates, N)
+    
+    # Abort if too many failures (>10% as per ANALYSIS_PROTOCOL.md)
+    if len(candidates) > 0 and failures / len(candidates) > 0.1:
+        raise RuntimeError(
+            f"Z5D scoring failed for {failures}/{len(candidates)} candidates ({failures/len(candidates)*100:.1f}%). "
+            f"This exceeds the 10% threshold. Investigate computational errors or data quality issues."
+        )
     
     # Extract top percentage by score
     top_candidates = extract_top_candidates(scored_candidates, top_pct)

@@ -2,7 +2,7 @@
 
 ## Overview
 
-This document details the four falsification criteria used to evaluate the asymmetric q-factor enrichment hypothesis. The hypothesis is **falsified** if ANY TWO of these criteria fail.
+This document details the four falsification criteria used to evaluate the asymmetric q-factor enrichment hypothesis. The hypothesis is **falsified** if **ANY ONE** of these criteria fails (per original specification).
 
 ## Primary Hypothesis
 
@@ -127,33 +127,15 @@ Strong signal in: 4 ranges (all except Extreme)  → CRITERION PASSED (replicate
 
 ### FALSIFIED
 
-**Condition:** ≥2 criteria failed
+**Condition:** ≥1 criterion failed (per original specification: "any of the following conditions")
 
 **Confidence:**
-- 3-4 criteria failed: 95% confidence
-- 2 criteria failed: 85% confidence
+- 2+ criteria failed: 95% confidence
+- 1 criterion failed: 85% confidence
 
 **Interpretation:** Asymmetric enrichment claim not supported by data
 
 **Action:** Publish negative result, investigate alternative hypotheses
-
----
-
-### PARTIALLY CONFIRMED
-
-**Condition:** Exactly 1 criterion failed
-
-**Confidence:** 70%
-
-**Interpretation:** 
-- Effect exists but weaker than claimed OR
-- Pattern present but not scale-invariant OR
-- Asymmetry detectable but not 5-10× strength
-
-**Action:** 
-- Revise claim to match observed effect size
-- Investigate which criterion failed and why
-- Potentially redesign with tighter controls
 
 ---
 

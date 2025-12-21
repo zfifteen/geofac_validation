@@ -267,22 +267,18 @@ def evaluate_falsification_criteria(
     criteria_failed = sum([criterion_1, criterion_2, criterion_3, criterion_4])
     
     # Make falsification decision
-    if criteria_failed >= 2:
+    # Per original specification: "falsified if any of the following conditions are met"
+    # This means ANY ONE failure is sufficient for falsification
+    if criteria_failed >= 1:
         decision = "FALSIFIED"
         interpretation = (
             f"Hypothesis falsified: {criteria_failed}/4 criteria failed. "
             f"Q-enrichment mean={mean_q:.2f}x (expected >5x), "
             f"P-enrichment mean={mean_p:.2f}x (expected ~1x), "
-            f"Asymmetry ratio={mean_asymm:.2f} (expected ≥5)."
+            f"Asymmetry ratio={mean_asymm:.2f} (expected ≥5). "
+            f"Per specification, ANY failure falsifies the hypothesis."
         )
-        confidence = 0.95 if criteria_failed >= 3 else 0.85
-    elif criteria_failed == 1:
-        decision = "PARTIALLY_CONFIRMED"
-        interpretation = (
-            f"Partial confirmation: {criteria_failed}/4 criteria failed. "
-            f"Effect exists but weaker than claimed or with different pattern."
-        )
-        confidence = 0.70
+        confidence = 0.95 if criteria_failed >= 2 else 0.85
     elif criteria_failed == 0 and wilcoxon_q_p < alpha and mann_whitney_p < alpha:
         decision = "CONFIRMED"
         interpretation = (
