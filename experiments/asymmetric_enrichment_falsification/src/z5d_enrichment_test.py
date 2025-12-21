@@ -15,7 +15,6 @@ NO int64/uint64 - prevents silent overflow for 426-bit semiprimes.
 
 import sys
 import os
-import gmpy2
 from gmpy2 import mpz, isqrt
 import numpy as np
 from scipy.stats import qmc
