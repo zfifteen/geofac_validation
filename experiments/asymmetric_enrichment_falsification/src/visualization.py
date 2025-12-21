@@ -183,7 +183,7 @@ def plot_enrichment_by_bit_range(results: Dict, output_path: Path):
         ranges[range_name]['p'].append(r['z5d_enrichment_p'])
     
     # Create figure
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 5))
+    _, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 5))
     
     # Q-enrichment by range
     range_names = list(ranges.keys())
