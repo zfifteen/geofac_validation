@@ -18,7 +18,7 @@ import os
 from gmpy2 import mpz, isqrt
 import numpy as np
 from scipy.stats import qmc
-from typing import Tuple, Dict, List
+from typing import Tuple, List
 from dataclasses import dataclass, asdict
 import json
 
