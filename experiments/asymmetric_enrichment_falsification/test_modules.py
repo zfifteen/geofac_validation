@@ -7,7 +7,6 @@ Tests basic functionality without running full experiment.
 
 import sys
 import os
-from pathlib import Path
 
 # Add src directory to path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
