@@ -13,7 +13,7 @@ import gmpy2
 from gmpy2 import mpz, isqrt
 import json
 import random
-from typing import Tuple, List, Dict
+from typing import Tuple, List
 from dataclasses import dataclass, asdict
 
 
