@@ -14,7 +14,7 @@ import json
 import numpy as np
 import matplotlib.pyplot as plt
 from pathlib import Path
-from typing import List, Dict
+from typing import Dict
 
 
 def load_results(results_dir: Path) -> Dict:
