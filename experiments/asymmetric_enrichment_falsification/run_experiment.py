@@ -24,7 +24,7 @@ from pathlib import Path
 # Add src directory to path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
 
-from generate_test_set import generate_stratified_test_set, save_test_set, load_test_set
+from generate_test_set import generate_stratified_test_set, save_test_set
 from baseline_mc_enrichment import run_baseline_enrichment_suite, save_baseline_results
 from z5d_enrichment_test import run_z5d_enrichment_suite, save_z5d_results
 from statistical_analysis import evaluate_falsification_criteria, save_statistical_analysis
