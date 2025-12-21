@@ -2,11 +2,12 @@
 """
 Visualization Module for Falsification Experiment Results
 
-Generates publication-quality plots:
-1. Enrichment heatmaps (p vs q across bit lengths)
-2. Confidence interval forest plots
-3. QQ plots for distribution validation
-4. Asymmetry ratio distributions
+Generates publication-quality outputs:
+1. Enrichment comparison (box plots for baseline vs Z5D enrichment)
+2. Asymmetry distribution (histogram of E_q / E_p ratios)
+3. Confidence interval forest plots
+4. Enrichment by bit range (bar charts)
+5. Summary report (text)
 """
 
 import json
