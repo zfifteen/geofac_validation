@@ -1,0 +1,36 @@
+# Semiprime Generation Configuration
+# Stratified test set across 5 bit-length ranges
+
+ranges:
+  - name: "Small"
+    bits: [64, 128]
+    count: 4  # Semiprimes per imbalance level
+    imbalances: [0, 5]  # Percentage imbalance
+    
+  - name: "Medium"
+    bits: [128, 192]
+    count: 4
+    imbalances: [5, 20]
+    
+  - name: "Large"
+    bits: [192, 256]
+    count: 3
+    imbalances: [20, 40]
+    
+  - name: "RSA-like"
+    bits: [256, 384]
+    count: 2
+    imbalances: [40]
+    
+  - name: "Extreme"
+    bits: [384, 426]
+    count: 1
+    imbalances: [20, 40]
+
+# Total semiprimes: (4*2) + (4*2) + (3*2) + (2*1) + (1*2) = 8 + 8 + 6 + 2 + 2 = 26
+
+metadata:
+  primality_test: "Miller-Rabin"
+  primality_rounds: 64
+  arithmetic: "arbitrary precision (gmpy2/mpmath)"
+  reproducibility: "fixed seeds (42 + counter)"
