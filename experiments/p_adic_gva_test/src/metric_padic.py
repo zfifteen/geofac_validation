@@ -14,7 +14,7 @@ Key Concepts:
 """
 
 import math
-from typing import List, Tuple
+from typing import List
 
 
 def prime_factorization_small(n: int, max_prime: int = 1000) -> dict:
