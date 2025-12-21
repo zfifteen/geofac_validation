@@ -18,7 +18,7 @@ Falsification criteria:
 
 import numpy as np
 from scipy import stats
-from typing import List, Dict, Tuple
+from typing import List, Tuple
 import json
 from dataclasses import dataclass, asdict
 
