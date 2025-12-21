@@ -12,7 +12,7 @@ NO int64/uint64 - prevents silent overflow for 426-bit semiprimes.
 from gmpy2 import mpz, isqrt
 import numpy as np
 import random
-from typing import Tuple, Dict, List
+from typing import Tuple, List
 from dataclasses import dataclass, asdict
 import json
 
