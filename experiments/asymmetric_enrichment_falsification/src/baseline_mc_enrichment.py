@@ -246,7 +246,6 @@ def run_baseline_enrichment_suite(
         List of EnrichmentResult objects
     """
     results = []
-    total_trials = len(semiprimes) * n_trials
     trial_counter = 0
     
     for sp in semiprimes:
