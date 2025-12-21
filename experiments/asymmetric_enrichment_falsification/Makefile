@@ -8,11 +8,11 @@ help:
 	@echo ""
 	@echo "Available targets:"
 	@echo "  setup      - Install dependencies"
+	@echo "  test       - Run module validation tests"
 	@echo "  run        - Run complete experiment"
 	@echo "  clean      - Remove generated data"
 	@echo "  results    - Display experiment results"
 	@echo "  validate   - Validate configuration files"
-	@echo "  test       - Run quick test with reduced dataset"
 	@echo ""
 
 setup:
@@ -46,7 +46,5 @@ validate:
 	@python3 -c "import yaml; yaml.safe_load(open('config/statistical_thresholds.yaml'))" && echo "✓ statistical_thresholds.yaml valid"
 
 test:
-	@echo "Running quick test (reduced dataset)..."
-	@echo "This will temporarily modify config and restore after test"
-	@# Future: implement quick test mode
-	@echo "Quick test not yet implemented. Use 'make run' for full experiment."
+	@echo "Running module validation tests..."
+	python3 test_modules.py

@@ -29,6 +29,7 @@ from generate_test_set import generate_stratified_test_set, save_test_set, load_
 from baseline_mc_enrichment import run_baseline_enrichment_suite, save_baseline_results
 from z5d_enrichment_test import run_z5d_enrichment_suite, save_z5d_results
 from statistical_analysis import evaluate_falsification_criteria, save_statistical_analysis
+from visualization import generate_all_visualizations
 
 
 def load_config(config_path: str) -> dict:
@@ -206,6 +207,18 @@ def main():
     
     print(f"\nInterpretation:")
     print(f"  {decision.interpretation}")
+    
+    # ========================================================================
+    # PHASE 5: GENERATE VISUALIZATIONS
+    # ========================================================================
+    
+    print_header("Phase 5: Generate Visualizations")
+    
+    try:
+        generate_all_visualizations(results_dir)
+    except Exception as e:
+        print(f"Warning: Visualization generation failed: {e}")
+        print("Continuing without visualizations...")
     
     # ========================================================================
     # EXPERIMENT SUMMARY

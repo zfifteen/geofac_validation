@@ -34,7 +34,13 @@ pip install -r requirements.txt
 
 ```bash
 cd experiments/asymmetric_enrichment_falsification
-python3 run_experiment.py
+
+# Test modules first (optional but recommended)
+make test
+
+# Run full experiment
+make run
+# OR: python3 run_experiment.py
 ```
 
 This will:
@@ -42,8 +48,9 @@ This will:
 2. Run baseline Monte Carlo enrichment (10 trials × 100k candidates each)
 3. Run Z5D enrichment measurement (10 trials × 100k candidates each)
 4. Perform statistical analysis (Wilcoxon, Bootstrap CI, Mann-Whitney U)
-5. Make falsification decision
-6. Save all results to `data/results/`
+5. Generate visualizations (enrichment plots, CIs, asymmetry distributions)
+6. Make falsification decision
+7. Save all results to `data/results/`
 
 **Expected runtime:** 30-60 minutes (depends on hardware)
 
@@ -77,11 +84,14 @@ experiments/asymmetric_enrichment_falsification/
 │   ├── generate_test_set.py          # Semiprime generation
 │   ├── baseline_mc_enrichment.py     # Baseline measurement
 │   ├── z5d_enrichment_test.py        # Z5D measurement
-│   └── statistical_analysis.py       # Statistical tests
+│   ├── statistical_analysis.py       # Statistical tests
+│   └── visualization.py              # Plot generation
 ├── docs/
 │   ├── EXPERIMENT_DESIGN.md          # Design rationale
 │   ├── ANALYSIS_PROTOCOL.md          # Analysis methodology
 │   └── FALSIFICATION_CRITERIA.md     # Criteria details
+├── Makefile                           # Convenience targets
+├── test_modules.py                    # Validation tests
 ├── requirements.txt                   # Dependencies
 ├── run_experiment.py                  # Main runner
 └── README.md                          # This file
@@ -231,6 +241,24 @@ All results saved to `data/results/`:
 - **phase2_z5d_enrichment.json**: Z5D enrichment measurements (260 trials)
 - **falsification_decision.json**: Statistical analysis and decision
 - **experiment_metadata.json**: Provenance (timestamp, duration, decision)
+- **visualizations/**: PNG plots and summary report
+  - enrichment_comparison.png
+  - asymmetry_distribution.png
+  - confidence_intervals.png
+  - enrichment_by_bit_range.png
+  - summary_report.txt
+
+## Makefile Targets
+
+```bash
+make help       # Show available targets
+make setup      # Install dependencies
+make test       # Run module validation tests
+make validate   # Validate YAML configurations
+make run        # Run complete experiment
+make results    # Display quick results summary
+make clean      # Remove generated data
+```
 
 ## Citation
 
