@@ -9,7 +9,6 @@ CRITICAL: Uses arbitrary-precision arithmetic (gmpy2) exclusively.
 NO int64/uint64 - prevents silent overflow for 426-bit semiprimes.
 """
 
-import gmpy2
 from gmpy2 import mpz, isqrt
 import numpy as np
 import random
