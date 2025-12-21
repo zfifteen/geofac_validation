@@ -11,7 +11,6 @@ NO int64, NO fixed-width types - prevents silent overflow for 426-bit semiprimes
 
 import gmpy2
 from gmpy2 import mpz, isqrt
-import mpmath
 import json
 import random
 from typing import Tuple, List, Dict
