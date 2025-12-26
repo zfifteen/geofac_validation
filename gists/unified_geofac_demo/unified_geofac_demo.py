@@ -18,6 +18,7 @@ Dependencies:
 
 import sys
 import time
+import random
 import gmpy2
 import mpmath
 import numpy as np
@@ -255,17 +256,19 @@ def generate_window_candidates(sqrt_n: gmpy2.mpz, window_pct: float, num_candida
     Generate uniform candidates in the window [√N * (1 - pct), √N * (1 + pct)].
     Returns only odd candidates.
     """
-    window_radius = int(sqrt_n * window_pct / 100)
+    window_radius = gmpy2.mpz(int(sqrt_n * window_pct / 100))
     search_min = sqrt_n - window_radius
     search_max = sqrt_n + window_radius
     
     candidates = []
-    np.random.seed(int(window_pct * 1000))  # Deterministic per window
+    # Use Python's random for arbitrary-precision integers (avoids int64 overflow)
+    random.seed(int(window_pct * 1000))  # Deterministic per window
     
     space_size = search_max - search_min
     
     for _ in range(num_candidates):
-        offset = np.random.randint(0, space_size)
+        # Use random.randrange for arbitrary precision integer ranges
+        offset = gmpy2.mpz(random.randrange(0, int(space_size)))
         candidate = search_min + offset
         
         # Make odd
