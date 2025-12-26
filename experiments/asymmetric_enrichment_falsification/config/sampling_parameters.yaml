@@ -1,0 +1,37 @@
+# Sampling Parameters Configuration
+
+# QMC sampling
+qmc:
+  method: "Sobol"  # Sobol, Halton, Latin Hypercube
+  scramble: true
+  dimensions: 2
+  precision_bits: 106  # Fixed-point precision for mapping
+  
+# Baseline Monte Carlo
+baseline_mc:
+  method: "uniform_random"
+  
+# Search window
+search_window:
+  default_pct: 15.0  # Default ±15% of √N
+  adaptive: true     # Adapt to factor positions
+  safety_margin: 1.2 # 20% margin beyond max factor offset
+  
+# Proximity window (epsilon)
+proximity_window:
+  epsilon_pct: 1.0   # ±1% of √N
+  
+# Sampling sizes
+sample_sizes:
+  n_candidates: 100000     # Total candidates per trial
+  top_pct: 10.0           # Top percentage to analyze
+  n_trials_per_semiprime: 10
+  
+# Seeds
+random_seeds:
+  base_seed: 42
+  increment_per_trial: 1
+
+metadata:
+  qmc_reference: "adversarial_test_adaptive.py:340-378"
+  precision_notes: "106-bit fixed-point prevents quantization clustering"

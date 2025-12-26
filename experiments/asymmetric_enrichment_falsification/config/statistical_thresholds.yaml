@@ -1,0 +1,71 @@
+# Statistical Thresholds Configuration
+
+# Falsification criteria
+falsification_criteria:
+  criterion_1:
+    name: "Q-enrichment too low"
+    threshold: 2.0
+    comparison: "mean_q_enrichment <= threshold"
+    expected: ">5.0x per claim"
+    
+  criterion_2:
+    name: "P-enrichment too high"
+    threshold: 3.0
+    comparison: "mean_p_enrichment >= threshold"
+    expected: "~1.0x per claim"
+    
+  criterion_3:
+    name: "Asymmetry ratio too low"
+    threshold: 2.0
+    comparison: "asymmetry_ratio < threshold"
+    expected: ">=5.0 per claim"
+    
+  criterion_4:
+    name: "Pattern fails across bit ranges"
+    threshold: 3
+    comparison: "successful_ranges < threshold"
+    expected: "Replication across all ranges"
+    
+# Statistical tests
+statistical_tests:
+  wilcoxon:
+    null_value_q: 5.0
+    null_value_p: 1.0
+    alternative_q: "greater"
+    alternative_p: "two-sided"
+    
+  bootstrap:
+    n_resamples: 10000
+    confidence_level: 0.95
+    random_seed: 42
+    
+  mann_whitney:
+    alternative: "greater"  # q > p
+    min_effect_size: 1.5    # Cohen's d
+    
+  levene:
+    alpha: 0.01
+    
+# Significance levels
+significance:
+  alpha: 0.01              # Bonferroni-corrected
+  bonferroni_factor: 4     # Number of comparisons
+  confidence_threshold: 0.95
+
+# Decision thresholds
+decision:
+  falsified: 
+    min_criteria_failed: 1  # Per spec: "any of the following conditions"
+    confidence_2plus: 0.95  # 2+ failures
+    confidence_1: 0.85      # 1 failure
+  confirmed:
+    criteria_failed: 0
+    min_p_value: 0.01
+    confidence: 0.95
+  inconclusive:
+    confidence: 0.50
+
+metadata:
+  reference: "Technical Specification Section 1 - Falsification Criteria"
+  correction_method: "Bonferroni for multiple comparisons"
+  note: "Original spec states hypothesis falsified if ANY ONE condition met"
