@@ -1,0 +1,72 @@
+{
+  "decision": "CONFIRMED",
+  "confidence": 0.95,
+  "criteria_failed": 0,
+  "statistics": {
+    "mean_q_enrichment": 5.015756605055963,
+    "mean_p_enrichment": 0.0,
+    "mean_asymmetry_ratio": 100.0,
+    "criteria_failed": 0
+  },
+  "test_results": [
+    {
+      "name": "RSA-100",
+      "p_offset_pct": 2.6789559167183095,
+      "q_offset_pct": 2.7526995234718346,
+      "window_pct": 15.0,
+      "n_candidates": 50000,
+      "n_top": 5000,
+      "count_p": 0,
+      "count_q": 0,
+      "expected_uniform": 333.33333333333326,
+      "enrichment_p": 0.0,
+      "enrichment_q": 0.0,
+      "asymmetry_ratio": "inf"
+    },
+    {
+      "name": "RSA-110",
+      "p_offset_pct": 2.3332244899282335,
+      "q_offset_pct": 2.2800263565992416,
+      "window_pct": 15.0,
+      "n_candidates": 50000,
+      "n_top": 5000,
+      "count_p": 0,
+      "count_q": 0,
+      "expected_uniform": 333.33333333333337,
+      "enrichment_p": 0.0,
+      "enrichment_q": 0.0,
+      "asymmetry_ratio": "inf"
+    },
+    {
+      "name": "RSA-120",
+      "p_offset_pct": 31.2812852960053,
+      "q_offset_pct": 45.52076596710108,
+      "window_pct": 54.624919160521294,
+      "n_candidates": 50000,
+      "n_top": 5000,
+      "count_p": 0,
+      "count_q": 916,
+      "expected_uniform": 91.53331623808822,
+      "enrichment_p": 0.0,
+      "enrichment_q": 10.0072851902075,
+      "asymmetry_ratio": "inf"
+    },
+    {
+      "name": "RSA-129",
+      "p_offset_pct": 67.36277830028634,
+      "q_offset_pct": 206.39862951593497,
+      "window_pct": 247.67835541912194,
+      "n_candidates": 50000,
+      "n_top": 5000,
+      "count_p": 0,
+      "count_q": 203,
+      "expected_uniform": 20.18747254494236,
+      "enrichment_p": 0.0,
+      "enrichment_q": 10.055741230016352,
+      "asymmetry_ratio": "inf"
+    }
+  ],
+  "failures": [],
+  "timestamp": "2025-12-26T06:58:57.750531",
+  "duration_seconds": 25.641407
+}
