@@ -13,7 +13,7 @@ Where N is a semiprime to factor. The script works "in the blind" - it never
 requires or uses knowledge of the true factors.
 
 Dependencies:
-    numpy, scipy, gmpy2, mpmath
+    numpy, gmpy2, mpmath
 """
 
 import sys
@@ -180,7 +180,7 @@ def compute_resonance_amplitude(N: int, qmc_phase: float, window_size: int = 100
     return amplitude, window_size
 
 
-def balanced_geofac_search(N: gmpy2.mpz, max_iterations: int = 10000) -> Optional[Tuple[gmpy2.mpz, gmpy2.mpz]]:
+def balanced_geofac_search(N: gmpy2.mpz, context: 'SearchContext', max_iterations: int = 10000) -> Optional[Tuple[gmpy2.mpz, gmpy2.mpz]]:
     """
     Stage 1: Balanced GeoFac search for factors close to √N.
     
@@ -194,7 +194,7 @@ def balanced_geofac_search(N: gmpy2.mpz, max_iterations: int = 10000) -> Optiona
     sqrt_n = gmpy2.isqrt(N)
     print(f"Searching near √N ≈ {sqrt_n}")
     
-    # Generate QMC-style phase samples for resonance scanning
+    # Generate pseudo-random phase samples for resonance scanning
     np.random.seed(42)
     qmc_phases = np.random.random(max_iterations)
     
@@ -228,6 +228,11 @@ def balanced_geofac_search(N: gmpy2.mpz, max_iterations: int = 10000) -> Optiona
         
         tests_performed += 1
         
+        # Update context with test count and best amplitude
+        context.balanced_tests = tests_performed
+        if amplitude > context.best_balanced_amplitude:
+            context.best_balanced_amplitude = amplitude
+        
         # Test divisibility
         if N % candidate == 0:
             p = gmpy2.mpz(candidate)
@@ -242,6 +247,8 @@ def balanced_geofac_search(N: gmpy2.mpz, max_iterations: int = 10000) -> Optiona
             print(f"  Tested {i+1}/{max_iterations} candidates ({elapsed:.1f}s, best amplitude: {best_amplitude:.4f})")
     
     elapsed = time.time() - start_time
+    context.balanced_tests = tests_performed  # Final update
+    context.best_balanced_amplitude = best_amplitude
     print(f"\n✗ Balanced search exhausted ({elapsed:.2f}s, {tests_performed} tests)")
     print(f"  Best amplitude: {best_amplitude:.4f}")
     return None
@@ -283,7 +290,7 @@ def generate_window_candidates(sqrt_n: gmpy2.mpz, window_pct: float, num_candida
     return candidates
 
 
-def adaptive_window_search(N: gmpy2.mpz, explored_regions: set) -> Optional[Tuple[gmpy2.mpz, gmpy2.mpz]]:
+def adaptive_window_search(N: gmpy2.mpz, context: 'SearchContext') -> Optional[Tuple[gmpy2.mpz, gmpy2.mpz]]:
     """
     Stage 2: Adaptive window search with branch-and-bound.
     
@@ -299,17 +306,21 @@ def adaptive_window_search(N: gmpy2.mpz, explored_regions: set) -> Optional[Tupl
     # Verified window schedule from z5d_validation_n127.py
     window_schedule = [13, 20, 30, 50, 75, 100, 150, 200, 300]
     
-    # QMC candidate count per window
+    # Pseudo-random uniform candidate count per window
     candidates_per_window = 10000
     
     total_start = time.time()
+    total_tests = 0
     
     for window_pct in window_schedule:
+        # Mark this window as explored
+        context.mark_region(float(window_pct))
+        
         print(f"\n--- Testing ±{window_pct}% window around √N ---")
         
         window_start_time = time.time()
         
-        # Generate QMC candidates in this window
+        # Generate pseudo-random uniform candidates in this window
         candidates = generate_window_candidates(sqrt_n, window_pct, candidates_per_window)
         
         # Score candidates with Z5D
@@ -329,6 +340,12 @@ def adaptive_window_search(N: gmpy2.mpz, explored_regions: set) -> Optional[Tupl
         tests_performed = 0
         for candidate, score in scored_candidates[:top_k]:
             tests_performed += 1
+            total_tests += 1
+            
+            # Update context with running total and best score
+            context.adaptive_tests = total_tests
+            if score < context.best_adaptive_z5d_score:
+                context.best_adaptive_z5d_score = score
             
             if N % candidate == 0:
                 p = candidate
@@ -412,7 +429,7 @@ def unified_blind_factorization(N: gmpy2.mpz) -> Dict[str, Any]:
     
     # Stage 1: Balanced GeoFac
     balanced_start = time.time()
-    result = balanced_geofac_search(N, max_iterations=10000)
+    result = balanced_geofac_search(N, context, max_iterations=10000)
     context.balanced_time = time.time() - balanced_start
     context.mark_region(5.0)  # Balanced search covers ±5%
     
@@ -429,7 +446,7 @@ def unified_blind_factorization(N: gmpy2.mpz) -> Dict[str, Any]:
     
     # Stage 2: Adaptive Window Search
     adaptive_start = time.time()
-    result = adaptive_window_search(N, context.explored_regions)
+    result = adaptive_window_search(N, context)
     context.adaptive_time = time.time() - adaptive_start
     
     if result is not None:
