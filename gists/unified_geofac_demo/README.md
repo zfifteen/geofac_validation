@@ -16,7 +16,7 @@ A self-contained demonstration combining two rigorously verified semiprime facto
 ## Installation
 
 ```bash
-pip install numpy scipy gmpy2 mpmath
+pip install numpy gmpy2 mpmath
 ```
 
 ## Usage
@@ -42,7 +42,7 @@ Expected runtime: 6-48 seconds depending on factor balance.
 ### Stage 1: Balanced GeoFac (±5% window)
 
 1. Computes √N as initial search center
-2. Generates QMC-guided phase samples
+2. Generates pseudo-random phase samples
 3. Applies verified resonance formula:
    ```
    amplitude = Σ |cos(θ + ln(k)·φ)| / ln(k) + |cos(ln(k)·e)| · 0.5
@@ -55,7 +55,7 @@ Expected runtime: 6-48 seconds depending on factor balance.
 
 1. Tests progressively larger windows: ±13%, ±20%, ±30%, ±50%, ±75%, ±100%, ±150%, ±200%, ±300%
 2. For each window:
-   - Generates 10,000 uniform QMC candidates
+   - Generates 10,000 pseudo-random uniform candidates
    - Scores each with Z5D nth-prime predictor
    - Tests top-1000 highest-scoring candidates
 3. Stops when factor found or all windows exhausted
