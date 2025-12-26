@@ -418,6 +418,49 @@ def unified_blind_factorization(N: gmpy2.mpz) -> Dict[str, Any]:
     2. If no factor found, hand off to adaptive window search
     3. Return detailed results with metadata
     """
+    # Quick sanity checks
+    if N <= 3:
+        context = SearchContext(N)
+        return {
+            'success': False,
+            'method': None,
+            'p': None,
+            'q': None,
+            'verification': False,
+            'metadata': context.summary()
+        }
+    
+    # Check for trivial even factorization: N = 2 * (N / 2)
+    if gmpy2.t_mod(N, 2) == 0:
+        p = gmpy2.mpz(2)
+        q = N // p
+        context = SearchContext(N)
+        return {
+            'success': True,
+            'method': 'small_factor_trial',
+            'p': str(p),
+            'q': str(q),
+            'verification': str(p * q) == str(N),
+            'metadata': context.summary()
+        }
+    
+    # Quick trial division by small primes
+    small_primes = [3, 5, 7, 11, 13, 17, 19, 23, 29, 31]
+    for sp in small_primes:
+        sp_mpz = gmpy2.mpz(sp)
+        if gmpy2.t_mod(N, sp_mpz) == 0 and N != sp_mpz:
+            p = sp_mpz
+            q = N // p
+            context = SearchContext(N)
+            return {
+                'success': True,
+                'method': 'small_factor_trial',
+                'p': str(p),
+                'q': str(q),
+                'verification': str(p * q) == str(N),
+                'metadata': context.summary()
+            }
+    
     print("="*80)
     print("UNIFIED GEOFAC BLIND FACTORIZATION")
     print("="*80)
