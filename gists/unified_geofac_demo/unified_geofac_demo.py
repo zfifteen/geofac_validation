@@ -263,19 +263,31 @@ def generate_window_candidates(sqrt_n: gmpy2.mpz, window_pct: float, num_candida
     Generate uniform candidates in the window [√N * (1 - pct), √N * (1 + pct)].
     Returns only odd candidates.
     """
-    window_radius = gmpy2.mpz(int(sqrt_n * window_pct / 100))
+    # Use gmpy2 arithmetic to avoid int overflow
+    window_radius = (sqrt_n * gmpy2.mpz(int(window_pct * 100))) // gmpy2.mpz(10000)
     search_min = sqrt_n - window_radius
     search_max = sqrt_n + window_radius
     
     candidates = []
-    # Use Python's random for arbitrary-precision integers (avoids int64 overflow)
+    # Use Python's random for arbitrary-precision integer ranges
     random.seed(int(window_pct * 1000))  # Deterministic per window
     
     space_size = search_max - search_min
     
+    # For very large space_size, we need to sample carefully
+    # random.randrange can handle arbitrary integers, but we need to convert for the range
     for _ in range(num_candidates):
         # Use random.randrange for arbitrary precision integer ranges
-        offset = gmpy2.mpz(random.randrange(0, int(space_size)))
+        # Note: For very large ranges (>10^18), this is still sparse sampling
+        if space_size > 0:
+            offset = gmpy2.mpz(random.randrange(0, min(int(space_size), 10**18)))
+            if space_size > 10**18:
+                # For extremely large windows, add a random high-order component
+                high_bits = random.randrange(0, int(space_size // 10**18) + 1)
+                offset += gmpy2.mpz(high_bits) * gmpy2.mpz(10**18)
+        else:
+            offset = gmpy2.mpz(0)
+            
         candidate = search_min + offset
         
         # Make odd
@@ -431,7 +443,7 @@ def unified_blind_factorization(N: gmpy2.mpz) -> Dict[str, Any]:
         }
     
     # Check for trivial even factorization: N = 2 * (N / 2)
-    if gmpy2.t_mod(N, 2) == 0:
+    if gmpy2.is_even(N):
         p = gmpy2.mpz(2)
         q = N // p
         context = SearchContext(N)
@@ -445,10 +457,9 @@ def unified_blind_factorization(N: gmpy2.mpz) -> Dict[str, Any]:
         }
     
     # Quick trial division by small primes
-    small_primes = [3, 5, 7, 11, 13, 17, 19, 23, 29, 31]
-    for sp in small_primes:
-        sp_mpz = gmpy2.mpz(sp)
-        if gmpy2.t_mod(N, sp_mpz) == 0 and N != sp_mpz:
+    small_primes = [gmpy2.mpz(p) for p in [3, 5, 7, 11, 13, 17, 19, 23, 29, 31]]
+    for sp_mpz in small_primes:
+        if gmpy2.gcd(N, sp_mpz) == sp_mpz and N != sp_mpz:
             p = sp_mpz
             q = N // p
             context = SearchContext(N)
