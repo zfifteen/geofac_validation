@@ -130,7 +130,7 @@ def compute_z5d_score(p_str: str, n_est: gmpy2.mpz) -> float:
 # Balanced GeoFac Engine (from geofac/tools/run_geofac_peaks_mod.py)
 # =============================================================================
 
-def compute_resonance_amplitude(N: int, qmc_phase: float, window_size: int = 1000) -> Tuple[float, int]:
+def compute_resonance_amplitude(N, qmc_phase: float, window_size: int = 1000) -> Tuple[float, int]:
     """
     Compute geometric/phase resonance amplitude near sqrt(N).
     
@@ -213,7 +213,7 @@ def balanced_geofac_search(N: gmpy2.mpz, context: 'SearchContext', max_iteration
     
     for i, phase in enumerate(qmc_phases):
         # Compute resonance amplitude
-        amplitude, _ = compute_resonance_amplitude(int(N), phase, window_size=1000)
+        amplitude, _ = compute_resonance_amplitude(N, phase, window_size=1000)
         
         if amplitude > best_amplitude:
             best_amplitude = amplitude
