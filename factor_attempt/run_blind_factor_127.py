@@ -92,9 +92,9 @@ def compute_resonance_score(candidate: gmpy2.mpz, qmc_row: np.ndarray) -> float:
         return -1000.0
 
 
-def check_candidate(candidate: gmpy2.mpz) -> tuple:
+def test_candidate(candidate: gmpy2.mpz) -> tuple:
     """
-    Check if candidate is a non-trivial factor of N_127 using GCD.
+    Test if candidate is a non-trivial factor of N_127 using GCD.
 
     Returns:
         Tuple of (is_factor, factor_value)
@@ -141,7 +141,7 @@ def run_batch(batch_num: int, start_time: float) -> tuple:
             break
 
         candidates_tested += 1
-        is_factor, factor = check_candidate(candidate)
+        is_factor, factor = test_candidate(candidate)
 
         if is_factor:
             return True, factor, candidates_tested
