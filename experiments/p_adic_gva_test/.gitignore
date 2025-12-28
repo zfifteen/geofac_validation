@@ -1,0 +1,19 @@
+# Ignore all CSV result files
+results/*.csv
+
+# Except keep the example
+!results/example_results.csv
+
+# Ignore Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Ignore Jupyter notebooks checkpoints
+.ipynb_checkpoints/
+
+# Ignore any temporary files
+*.tmp
+*.log
