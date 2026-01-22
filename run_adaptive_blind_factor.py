@@ -102,8 +102,8 @@ WINDOW_SEQUENCE = [0.13, 0.20, 0.30, 0.50, 0.75, 1.00, 1.50, 2.00, 3.00]
 # Extended timeout for thorough testing
 MAX_WALLCLOCK_SECONDS = 3600  # 1 hour
 
-# Enrichment detection threshold (stop if signal detected)
-ENRICHMENT_THRESHOLD = 5.0  # 5× enrichment triggers deeper search
+# NOTE: Enrichment detection for early stopping is a planned future enhancement
+# ENRICHMENT_THRESHOLD = 5.0  # 5× enrichment would trigger deeper search
 
 # Candidates per window
 CANDIDATES_PER_WINDOW = 500_000
@@ -112,7 +112,7 @@ TOP_K_FRACTION = 0.01  # Test top 1%
 # QMC generation constants
 QMC_SEED = 42  # Seed for reproducibility
 QMC_SCALE_BITS = 53  # 2^53 for each dimension
-QMC_DENOM_BITS = 106  # Total precision: 53 + 53 bits
+QMC_DENOM_BITS = QMC_SCALE_BITS * 2  # Total precision: 2 × QMC_SCALE_BITS
 
 # Asymmetric window biasing (based on observed q-enrichment)
 WINDOW_BIAS_BELOW = 0.3  # 30% below sqrt(N)
@@ -154,9 +154,9 @@ def generate_qmc_candidates(search_min, search_max, n_samples):
         lo = min(int(row[1] * scale), scale - 1)
         
         # Combine into multi-bit value
-        # NOTE: This assumes QMC_SCALE_BITS = 53 for proper 106-bit precision
-        # If QMC_SCALE_BITS is changed, QMC_DENOM_BITS must also be updated accordingly
-        assert QMC_SCALE_BITS == 53, "QMC_SCALE_BITS must be 53 for current implementation"
+        # Verify QMC constants are consistent
+        assert QMC_DENOM_BITS == 2 * QMC_SCALE_BITS, \
+            f"QMC_DENOM_BITS ({QMC_DENOM_BITS}) must equal 2 × QMC_SCALE_BITS ({QMC_SCALE_BITS})"
         x = (hi << QMC_SCALE_BITS) | lo
         
         # Map to search range using gmpy2 for large numbers
