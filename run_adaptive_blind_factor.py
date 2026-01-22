@@ -2,13 +2,70 @@
 """
 Improved Experiment Design: run_adaptive_blind_factor.py
 
-Key modifications for collaborative testing:
-- Adaptive window sequence strategy for blind factorization
-- Uses test semiprimes where factors are known but "hidden" during search
-- Allows verification while testing blind methodology
-- QMC-based candidate generation for uniform coverage
-- Z5D scoring for geometric resonance detection
-- Asymmetric windowing biased toward larger factor (q)
+OVERVIEW
+========
+This script implements a blind factorization algorithm using adaptive window
+search with Z5D geometric resonance scoring. It tests whether we can factor
+semiprimes without prior knowledge of factor locations by iteratively expanding
+the search window until factors are found.
+
+KEY FEATURES
+============
+1. **Adaptive Window Strategy**: Tests progressively larger windows (13%, 20%, 
+   30%, 50%, 75%, 100%, 150%, 200%, 300% of sqrt(N)) until factor found or 
+   timeout reached.
+
+2. **Asymmetric Windowing**: Based on observed q-enrichment patterns, searches 
+   30% below sqrt(N) and 100% above sqrt(N) to bias toward larger factors.
+
+3. **QMC Candidate Generation**: Uses Sobol quasi-Monte Carlo sequences with 
+   106-bit fixed-point precision for uniform coverage without float quantization.
+
+4. **Z5D Geometric Resonance Scoring**: Scores candidates using prime number 
+   theorem predictions via the z5d_adapter module.
+
+5. **Blind Testing with Verification**: Uses known test semiprimes where factors
+   are "hidden" during search but available for post-hoc verification.
+
+USAGE
+=====
+Run with default parameters (1 hour timeout, 500k candidates per window):
+    python3 run_adaptive_blind_factor.py
+
+Customize parameters in code:
+    CANDIDATES_PER_WINDOW = 100_000  # Reduce for faster testing
+    WINDOW_SEQUENCE = [0.13, 0.20]   # Test fewer windows
+    MAX_WALLCLOCK_SECONDS = 600      # 10 minute timeout
+
+OUTPUT
+======
+Results are saved to: adaptive_blind_results.json
+
+Format:
+{
+  "N_127": {
+    "factor_found": true/false,
+    "factor": <factor if found>,
+    "cofactor": <cofactor if found>,
+    "window_pct": <window where found>,
+    "windows_tested": [<detailed window stats>],
+    "time_elapsed": <seconds>,
+    "verification": "CORRECT"/"INCORRECT"/"NOT_FOUND"
+  }
+}
+
+IMPLEMENTATION NOTES
+====================
+- All arithmetic uses gmpy2.mpz for arbitrary precision (no np.int64)
+- QMC mapping uses gmpy2 to avoid overflow on large search ranges
+- Search windows are clamped to stay positive (min value = 2)
+- JSON serialization recursively converts gmpy2.mpz to strings
+
+REFERENCES
+==========
+- Based on methodology from adversarial_test_adaptive.py
+- Uses z5d_adapter.py for geometric resonance scoring
+- Follows repository guidelines for avoiding fixed-width integers
 """
 
 import gmpy2
