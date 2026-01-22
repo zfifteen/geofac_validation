@@ -91,9 +91,13 @@ def generate_semiprime_with_offset(target_bits: int, offset_type: str,
     # For N ≈ 2^target_bits, we want p, q ≈ 2^(target_bits/2)
     factor_bits = target_bits // 2
     
-    # Generate base factors
+    # Generate base factors using gmpy2 for arbitrary precision
     # Start with balanced factors (p ≈ q ≈ √N)
-    p_base = gmpy2.mpz(2) ** (factor_bits - 1) + gmpy2.mpz(random.randint(0, 2**(factor_bits-2)))
+    p_base_range = gmpy2.mpz(2) ** (factor_bits - 2)
+    # Use gmpy2.mpz_random for arbitrary precision random generation
+    random_state = gmpy2.random_state(seed) if seed is not None else gmpy2.random_state()
+    p_offset_random = gmpy2.mpz_urandomb(random_state, factor_bits - 2)
+    p_base = gmpy2.mpz(2) ** (factor_bits - 1) + p_offset_random
     p = gmpy2.next_prime(p_base)
     
     # Calculate target sqrt(N) for offset calculations
@@ -101,6 +105,10 @@ def generate_semiprime_with_offset(target_bits: int, offset_type: str,
     sqrt_N_approx = gmpy2.mpz(2) ** (factor_bits)
     
     # Generate q based on offset type
+    # Important: for extreme offsets, ensure q stays within reasonable bit range
+    # to avoid producing semiprimes much smaller than target
+    min_q_bits = max(2, factor_bits - 5)  # Allow up to 5 bit reduction
+    
     if offset_type == "balanced":
         # |p - q| < 0.05√N
         max_offset = int(sqrt_N_approx * 0.05)
@@ -113,15 +121,17 @@ def generate_semiprime_with_offset(target_bits: int, offset_type: str,
         q_target = p + offset if random.random() > 0.5 else p - offset
     elif offset_type == "extreme":
         # 0.50√N < |p - q| < 1.00√N
+        # For extreme, prefer adding to p rather than subtracting to avoid tiny q
         min_offset = int(sqrt_N_approx * 0.50)
         max_offset = int(sqrt_N_approx * 1.00)
         offset = random.randint(min_offset, max_offset)
-        q_target = p + offset if random.random() > 0.5 else p - offset
+        # Bias toward larger factor (add offset 75% of the time)
+        q_target = p + offset if random.random() > 0.25 else max(p - offset, sqrt_N_approx // 4)
     else:
         raise ValueError(f"Unknown offset_type: {offset_type}")
     
-    # Ensure q_target is positive and find next prime
-    q_target = max(2, q_target)
+    # Ensure q_target is positive and of reasonable size
+    q_target = max(gmpy2.mpz(2) ** min_q_bits, q_target)
     q = gmpy2.next_prime(q_target)
     
     # Compute semiprime

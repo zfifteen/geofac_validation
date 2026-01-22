@@ -69,6 +69,7 @@ REFERENCES
 import gmpy2
 import time
 import numpy as np
+import random
 from typing import List, Tuple, Dict, Any
 from scipy.stats import qmc
 import sys
@@ -85,6 +86,9 @@ from z5d_adapter import z5d_n_est, compute_z5d_score
 QMC_SEED = 42
 QMC_SCALE_BITS = 53  # 2^53 for each dimension
 QMC_DENOM_BITS = QMC_SCALE_BITS * 2  # Total precision: 106 bits
+
+# Seed random module for reproducibility
+random.seed(QMC_SEED)
 
 
 def generate_qmc_candidates(search_min: gmpy2.mpz, search_max: gmpy2.mpz, 
@@ -124,9 +128,7 @@ def generate_qmc_candidates(search_min: gmpy2.mpz, search_max: gmpy2.mpz,
             repetitions = (n_samples // len(candidates)) + 1
             candidates = (candidates * repetitions)[:n_samples]
         elif len(candidates) > n_samples:
-            # Randomly sample n_samples from the candidates
-            import random
-            random.seed(QMC_SEED)
+            # Randomly sample n_samples from the candidates (already seeded at module level)
             candidates = random.sample(candidates, n_samples)
         
         return candidates
@@ -307,7 +309,9 @@ def gradient_zoom(N: gmpy2.mpz,
     # But for small N, this might be too large, so cap it intelligently
     n_bits = N.bit_length()
     auto_threshold_bits = max(convergence_threshold_bits, n_bits // 4)
-    # For very small N, use a fraction of the initial window
+    # For very small N (< 16 bits total), use a fraction of initial window
+    # The magic number 4 here represents log2(16) - below this size,
+    # bit-based thresholds become larger than the entire search space
     if auto_threshold_bits > n_bits - 4:
         # Use 1/100 of initial window as threshold for small numbers
         convergence_threshold = max(gmpy2.mpz(1), window_radius // 100)
@@ -391,7 +395,11 @@ def gradient_zoom(N: gmpy2.mpz,
         
         # Step 4: Test - Check if any top candidates are factors
         # Test all top candidates (not just top 100) since we want maximum coverage
-        gcd_test_count = min(len(top_candidates), 1000)  # Cap at 1000 for efficiency
+        # Cap at 1000 to balance thoroughness vs performance:
+        # - Testing more increases chance of finding factor in top-scored cluster
+        # - But GCD is fast (~microseconds), so 1000 tests add negligible time
+        # - For production, this could be made configurable
+        gcd_test_count = min(len(top_candidates), 1000)
         for candidate, score in top_candidates[:gcd_test_count]:
             g = gmpy2.gcd(candidate, N)
             if g > 1 and g < N:
