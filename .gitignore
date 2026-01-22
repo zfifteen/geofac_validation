@@ -6,3 +6,4 @@ __pycache__/
 *.pyo
 .pytest_cache/
 .ipynb_checkpoints/
+adaptive_blind_results.json
