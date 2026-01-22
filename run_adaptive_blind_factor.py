@@ -52,6 +52,11 @@ ENRICHMENT_THRESHOLD = 5.0  # 5× enrichment triggers deeper search
 CANDIDATES_PER_WINDOW = 500_000
 TOP_K_FRACTION = 0.01  # Test top 1%
 
+# QMC generation constants
+QMC_SEED = 42  # Seed for reproducibility
+QMC_SCALE_BITS = 53  # 2^53 for each dimension
+QMC_DENOM_BITS = 106  # Total precision: 53 + 53 bits
+
 
 def generate_qmc_candidates(search_min, search_max, n_samples):
     """
@@ -69,7 +74,7 @@ def generate_qmc_candidates(search_min, search_max, n_samples):
         list of gmpy2.mpz: Odd candidates in the search range
     """
     # Initialize Sobol sampler with 2D space
-    sampler = qmc.Sobol(d=2, scramble=True, seed=42)
+    sampler = qmc.Sobol(d=2, scramble=True, seed=QMC_SEED)
     qmc_samples = sampler.random(n=n_samples)
     
     # Convert to integers for arithmetic
@@ -77,21 +82,23 @@ def generate_qmc_candidates(search_min, search_max, n_samples):
     search_max_int = int(search_max)
     search_range_int = search_max_int - search_min_int
     
-    # 106-bit fixed-point precision
-    scale = 1 << 53  # 2^53 for each dimension
-    denom_bits = 106
+    # Fixed-point precision constants
+    scale = 1 << QMC_SCALE_BITS
+    denom_bits = QMC_DENOM_BITS
     
     candidates = []
     for row in qmc_samples:
-        # Map [0,1]² to 106-bit fixed-point integer
+        # Map [0,1]² to fixed-point integer
         hi = min(int(row[0] * scale), scale - 1)
         lo = min(int(row[1] * scale), scale - 1)
         
-        # Combine into 106-bit value
-        x = (hi << 53) | lo
+        # Combine into multi-bit value
+        x = (hi << QMC_SCALE_BITS) | lo
         
-        # Map to search range
-        offset = (x * (search_range_int + 1)) >> denom_bits
+        # Map to search range using gmpy2 for large numbers
+        x_mpz = gmpy2.mpz(x)
+        range_mpz = gmpy2.mpz(search_range_int + 1)
+        offset = int((x_mpz * range_mpz) >> denom_bits)
         candidate = search_min_int + offset
         
         # Make candidate odd (all primes except 2 are odd)
@@ -179,7 +186,8 @@ def run_adaptive_window_search(N: gmpy2.mpz, max_time: int) -> dict:
         # ASYMMETRIC WINDOW: bias toward larger factor (q)
         # Based on observed enrichment pattern
         window_radius = int(sqrt_N * window_pct)
-        search_min = sqrt_N - int(window_radius * 0.3)  # 30% below
+        # Ensure search_min stays positive
+        search_min = max(gmpy2.mpz(2), sqrt_N - int(window_radius * 0.3))  # 30% below
         search_max = sqrt_N + int(window_radius * 1.0)  # 100% above
         
         print(f"\n[Window {window_pct*100:.0f}%] Searching [{search_min}, {search_max}]")
@@ -304,17 +312,20 @@ def main():
     
     # Save results to JSON
     output_file = output_dir / "adaptive_blind_results.json"
+    
+    def convert_mpz_to_str(obj):
+        """Recursively convert gmpy2.mpz to strings for JSON serialization."""
+        if isinstance(obj, gmpy2.mpz):
+            return str(obj)
+        elif isinstance(obj, dict):
+            return {k: convert_mpz_to_str(v) for k, v in obj.items()}
+        elif isinstance(obj, list):
+            return [convert_mpz_to_str(item) for item in obj]
+        else:
+            return obj
+    
     with open(output_file, 'w') as f:
-        # Convert mpz to strings for JSON serialization
-        json_results = {}
-        for name, result in all_results.items():
-            json_result = result.copy()
-            # Convert any remaining mpz values
-            for key, value in json_result.items():
-                if isinstance(value, gmpy2.mpz):
-                    json_result[key] = str(value)
-            json_results[name] = json_result
-        
+        json_results = convert_mpz_to_str(all_results)
         json.dump(json_results, f, indent=2)
     
     print(f"\n{'='*80}")
