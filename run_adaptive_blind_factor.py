@@ -69,7 +69,6 @@ REFERENCES
 """
 
 import gmpy2
-import numpy as np
 import time
 import json
 from pathlib import Path
@@ -112,11 +111,15 @@ TOP_K_FRACTION = 0.01  # Test top 1%
 # QMC generation constants
 QMC_SEED = 42  # Seed for reproducibility
 QMC_SCALE_BITS = 53  # 2^53 for each dimension
-QMC_DENOM_BITS = QMC_SCALE_BITS * 2  # Total precision: 2 × QMC_SCALE_BITS
+QMC_DENOM_BITS = QMC_SCALE_BITS * 2  # Total precision: 106 bits
 
 # Asymmetric window biasing (based on observed q-enrichment)
 WINDOW_BIAS_BELOW = 0.3  # 30% below sqrt(N)
 WINDOW_BIAS_ABOVE = 1.0  # 100% above sqrt(N)
+
+# Verify QMC constants are consistent at module load time
+assert QMC_DENOM_BITS == 2 * QMC_SCALE_BITS, \
+    f"QMC_DENOM_BITS ({QMC_DENOM_BITS}) must equal 2 × QMC_SCALE_BITS ({QMC_SCALE_BITS})"
 
 
 def generate_qmc_candidates(search_min, search_max, n_samples):
@@ -154,22 +157,25 @@ def generate_qmc_candidates(search_min, search_max, n_samples):
         lo = min(int(row[1] * scale), scale - 1)
         
         # Combine into multi-bit value
-        # Verify QMC constants are consistent
-        assert QMC_DENOM_BITS == 2 * QMC_SCALE_BITS, \
-            f"QMC_DENOM_BITS ({QMC_DENOM_BITS}) must equal 2 × QMC_SCALE_BITS ({QMC_SCALE_BITS})"
         x = (hi << QMC_SCALE_BITS) | lo
         
         # Map to search range using gmpy2 for large numbers
+        # Use search_range_int directly (without +1) for cleaner mapping
         x_mpz = gmpy2.mpz(x)
-        range_mpz = gmpy2.mpz(search_range_int + 1)
+        range_mpz = gmpy2.mpz(search_range_int)
         offset = int((x_mpz * range_mpz) >> denom_bits)
         candidate = search_min_int + offset
         
-        # Make candidate odd (all primes except 2 are odd)
+        # Ensure candidate is within bounds before making it odd
+        candidate = max(search_min_int, min(candidate, search_max_int))
+        
+        # Make candidate odd (all primes except 2 are odd) while staying in range
         if candidate % 2 == 0:
-            candidate += 1
-            if candidate > search_max_int:
-                candidate -= 2
+            if candidate + 1 <= search_max_int:
+                candidate += 1
+            elif candidate - 1 >= search_min_int:
+                candidate -= 1
+            # If range contains no odd numbers, leave candidate even (rare edge case)
         
         candidates.append(gmpy2.mpz(candidate))
     
@@ -202,9 +208,15 @@ def score_candidates_z5d(candidates):
             failures += 1
             if failures <= 3:
                 print(f"  Warning: Z5D scoring failed: {type(e).__name__}")
+            # Assign worst-case score so failed candidates remain in pool but ranked lowest
+            scored.append((c, float('inf')))
     
     if failures > 0:
-        print(f"  Total scoring failures: {failures}/{len(candidates)}")
+        total = len(candidates)
+        failure_rate = failures / total if total > 0 else 0
+        print(f"  Total scoring failures: {failures}/{total}")
+        if failure_rate > 0.10:
+            print(f"  Warning: High Z5D scoring failure rate: {failure_rate:.1%}")
     
     # Sort by score (lower is better)
     scored.sort(key=lambda x: x[1])
@@ -254,6 +266,22 @@ def run_adaptive_window_search(N: gmpy2.mpz, max_time: int) -> dict:
         search_min = max(gmpy2.mpz(2), sqrt_N - int(window_radius * WINDOW_BIAS_BELOW))
         search_max = sqrt_N + int(window_radius * WINDOW_BIAS_ABOVE)
         
+        # Validate search range to avoid degenerate or invalid windows
+        if search_max <= search_min:
+            print(f"\n[Window {window_pct*100:.0f}%] Skipping invalid search range [{search_min}, {search_max}]")
+            window_result = {
+                "window_pct": window_pct,
+                "candidates_generated": 0,
+                "top_k_tested": 0,
+                "elapsed": time.time() - start_time,
+                "window_time": 0.0,
+                "gen_time": 0.0,
+                "score_time": 0.0,
+                "gcd_time": 0.0
+            }
+            results["windows_tested"].append(window_result)
+            continue
+        
         print(f"\n[Window {window_pct*100:.0f}%] Searching [{search_min}, {search_max}]")
         window_start = time.time()
         
@@ -268,6 +296,22 @@ def run_adaptive_window_search(N: gmpy2.mpz, max_time: int) -> dict:
         scored = score_candidates_z5d(candidates)
         score_time = time.time() - score_start
         print(f"  Scored {len(scored)} candidates in {score_time:.2f}s")
+        
+        # Check if we have any scored candidates
+        if len(scored) == 0:
+            print(f"  Warning: All candidates failed to score. Skipping GCD tests for this window.")
+            window_result = {
+                "window_pct": window_pct,
+                "candidates_generated": len(candidates),
+                "top_k_tested": 0,
+                "elapsed": time.time() - start_time,
+                "window_time": time.time() - window_start,
+                "gen_time": gen_time,
+                "score_time": score_time,
+                "gcd_time": 0.0
+            }
+            results["windows_tested"].append(window_result)
+            continue
         
         # Test top-K via GCD
         top_k = max(1, int(len(scored) * TOP_K_FRACTION))
