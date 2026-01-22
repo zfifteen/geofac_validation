@@ -57,6 +57,10 @@ QMC_SEED = 42  # Seed for reproducibility
 QMC_SCALE_BITS = 53  # 2^53 for each dimension
 QMC_DENOM_BITS = 106  # Total precision: 53 + 53 bits
 
+# Asymmetric window biasing (based on observed q-enrichment)
+WINDOW_BIAS_BELOW = 0.3  # 30% below sqrt(N)
+WINDOW_BIAS_ABOVE = 1.0  # 100% above sqrt(N)
+
 
 def generate_qmc_candidates(search_min, search_max, n_samples):
     """
@@ -93,6 +97,9 @@ def generate_qmc_candidates(search_min, search_max, n_samples):
         lo = min(int(row[1] * scale), scale - 1)
         
         # Combine into multi-bit value
+        # NOTE: This assumes QMC_SCALE_BITS = 53 for proper 106-bit precision
+        # If QMC_SCALE_BITS is changed, QMC_DENOM_BITS must also be updated accordingly
+        assert QMC_SCALE_BITS == 53, "QMC_SCALE_BITS must be 53 for current implementation"
         x = (hi << QMC_SCALE_BITS) | lo
         
         # Map to search range using gmpy2 for large numbers
@@ -187,8 +194,8 @@ def run_adaptive_window_search(N: gmpy2.mpz, max_time: int) -> dict:
         # Based on observed enrichment pattern
         window_radius = int(sqrt_N * window_pct)
         # Ensure search_min stays positive
-        search_min = max(gmpy2.mpz(2), sqrt_N - int(window_radius * 0.3))  # 30% below
-        search_max = sqrt_N + int(window_radius * 1.0)  # 100% above
+        search_min = max(gmpy2.mpz(2), sqrt_N - int(window_radius * WINDOW_BIAS_BELOW))
+        search_max = sqrt_N + int(window_radius * WINDOW_BIAS_ABOVE)
         
         print(f"\n[Window {window_pct*100:.0f}%] Searching [{search_min}, {search_max}]")
         window_start = time.time()
@@ -253,7 +260,8 @@ def run_adaptive_window_search(N: gmpy2.mpz, max_time: int) -> dict:
         }
         results["windows_tested"].append(window_result)
         
-        print(f"  Window completed in {window_time:.2f}s (total: {elapsed+window_time:.2f}s)")
+        current_elapsed = time.time() - start_time
+        print(f"  Window completed in {window_time:.2f}s (total: {current_elapsed:.2f}s)")
     
     results["time_elapsed"] = time.time() - start_time
     print(f"\nSearch completed. No factor found.")
