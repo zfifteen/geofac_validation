@@ -1,0 +1,142 @@
+[
+  {
+    "id": "80-100_balanced_1",
+    "N": "411682108698360718767524483",
+    "bits": 89,
+    "offset_type": "balanced",
+    "target_bits": 90
+  },
+  {
+    "id": "80-100_balanced_2",
+    "N": "8767468129446363364689451261",
+    "bits": 93,
+    "offset_type": "balanced",
+    "target_bits": 95
+  },
+  {
+    "id": "80-100_balanced_3",
+    "N": "393358755255424809560992619633",
+    "bits": 99,
+    "offset_type": "balanced",
+    "target_bits": 100
+  },
+  {
+    "id": "80-100_moderate_1",
+    "N": "7457185356372973852971817",
+    "bits": 83,
+    "offset_type": "moderate",
+    "target_bits": 85
+  },
+  {
+    "id": "80-100_moderate_2",
+    "N": "431818734623683569757962461",
+    "bits": 89,
+    "offset_type": "moderate",
+    "target_bits": 90
+  },
+  {
+    "id": "80-100_moderate_3",
+    "N": "3081577706750887804075328563",
+    "bits": 92,
+    "offset_type": "moderate",
+    "target_bits": 95
+  },
+  {
+    "id": "80-100_moderate_4",
+    "N": "747853040859068528636378061913",
+    "bits": 100,
+    "offset_type": "moderate",
+    "target_bits": 100
+  },
+  {
+    "id": "80-100_extreme_1",
+    "N": "19434612500020541635551371",
+    "bits": 85,
+    "offset_type": "extreme",
+    "target_bits": 85
+  },
+  {
+    "id": "80-100_extreme_2",
+    "N": "287968101917271",
+    "bits": 49,
+    "offset_type": "extreme",
+    "target_bits": 95
+  },
+  {
+    "id": "80-100_extreme_3",
+    "N": "1089033871267673515573863466613",
+    "bits": 100,
+    "offset_type": "extreme",
+    "target_bits": 100
+  },
+  {
+    "id": "120-140_balanced_1",
+    "N": "8742742190115794619790807505391487303",
+    "bits": 123,
+    "offset_type": "balanced",
+    "target_bits": 125
+  },
+  {
+    "id": "120-140_balanced_2",
+    "N": "10473290891851210878412102490051578000867",
+    "bits": 133,
+    "offset_type": "balanced",
+    "target_bits": 135
+  },
+  {
+    "id": "120-140_moderate_1",
+    "N": "2084768883181294740775429438228506839",
+    "bits": 121,
+    "offset_type": "moderate",
+    "target_bits": 122
+  },
+  {
+    "id": "120-140_moderate_2",
+    "N": "629964931487201070224076277761770752601",
+    "bits": 129,
+    "offset_type": "moderate",
+    "target_bits": 130
+  },
+  {
+    "id": "120-140_moderate_3",
+    "N": "81362253906516814607730970727311717845539",
+    "bits": 136,
+    "offset_type": "moderate",
+    "target_bits": 138
+  },
+  {
+    "id": "120-140_extreme_1",
+    "N": "20489214273061060105686228565040459311",
+    "bits": 124,
+    "offset_type": "extreme",
+    "target_bits": 124
+  },
+  {
+    "id": "120-140_extreme_2",
+    "N": "33125471659168727451",
+    "bits": 65,
+    "offset_type": "extreme",
+    "target_bits": 128
+  },
+  {
+    "id": "120-140_extreme_3",
+    "N": "5673613948820563527826104759309776898101",
+    "bits": 133,
+    "offset_type": "extreme",
+    "target_bits": 132
+  },
+  {
+    "id": "120-140_extreme_4",
+    "N": "78032170500277825739052865128517656121129",
+    "bits": 136,
+    "offset_type": "extreme",
+    "target_bits": 136
+  },
+  {
+    "id": "120-140_extreme_5",
+    "N": "123770674426925554828603936786861130246441",
+    "bits": 137,
+    "offset_type": "extreme",
+    "target_bits": 140
+  }
+]
