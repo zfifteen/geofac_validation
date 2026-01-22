@@ -1,0 +1,336 @@
+#!/usr/bin/env python3
+"""
+Improved Experiment Design: run_adaptive_blind_factor.py
+
+Key modifications for collaborative testing:
+- Adaptive window sequence strategy for blind factorization
+- Uses test semiprimes where factors are known but "hidden" during search
+- Allows verification while testing blind methodology
+- QMC-based candidate generation for uniform coverage
+- Z5D scoring for geometric resonance detection
+- Asymmetric windowing biased toward larger factor (q)
+"""
+
+import gmpy2
+import numpy as np
+import time
+import json
+from pathlib import Path
+from scipy.stats import qmc
+
+# Add current directory to path for z5d_adapter imports
+import sys
+sys.path.insert(0, '.')
+from z5d_adapter import z5d_n_est, compute_z5d_score
+
+# ============================================
+# EXPERIMENT PARAMETERS - COLLABORATIVE DESIGN
+# ============================================
+
+# Target: Use a semiprime where we KNOW the factors but PRETEND we don't
+# This allows verification while testing blind methodology
+TEST_SEMIPRIMES = {
+    "N_127": {
+        "N": gmpy2.mpz("137524771864208156028430259349934309717"),
+        "p_true": gmpy2.mpz("10508623501177419659"),  # HIDDEN during search
+        "q_true": gmpy2.mpz("13086849276577416863"),  # HIDDEN during search
+        "bits": 127
+    },
+    # Add more test cases for validation
+}
+
+# Adaptive window sequence (as fraction of sqrt(N))
+WINDOW_SEQUENCE = [0.13, 0.20, 0.30, 0.50, 0.75, 1.00, 1.50, 2.00, 3.00]
+
+# Extended timeout for thorough testing
+MAX_WALLCLOCK_SECONDS = 3600  # 1 hour
+
+# Enrichment detection threshold (stop if signal detected)
+ENRICHMENT_THRESHOLD = 5.0  # 5× enrichment triggers deeper search
+
+# Candidates per window
+CANDIDATES_PER_WINDOW = 500_000
+TOP_K_FRACTION = 0.01  # Test top 1%
+
+
+def generate_qmc_candidates(search_min, search_max, n_samples):
+    """
+    Generate QMC candidates using Sobol sequence for uniform coverage.
+    
+    Uses 2D Sobol sequence mapped to 106-bit fixed-point precision
+    to avoid float quantization issues.
+    
+    Args:
+        search_min: Minimum candidate value (gmpy2.mpz or int)
+        search_max: Maximum candidate value (gmpy2.mpz or int)
+        n_samples: Number of candidates to generate
+    
+    Returns:
+        list of gmpy2.mpz: Odd candidates in the search range
+    """
+    # Initialize Sobol sampler with 2D space
+    sampler = qmc.Sobol(d=2, scramble=True, seed=42)
+    qmc_samples = sampler.random(n=n_samples)
+    
+    # Convert to integers for arithmetic
+    search_min_int = int(search_min)
+    search_max_int = int(search_max)
+    search_range_int = search_max_int - search_min_int
+    
+    # 106-bit fixed-point precision
+    scale = 1 << 53  # 2^53 for each dimension
+    denom_bits = 106
+    
+    candidates = []
+    for row in qmc_samples:
+        # Map [0,1]² to 106-bit fixed-point integer
+        hi = min(int(row[0] * scale), scale - 1)
+        lo = min(int(row[1] * scale), scale - 1)
+        
+        # Combine into 106-bit value
+        x = (hi << 53) | lo
+        
+        # Map to search range
+        offset = (x * (search_range_int + 1)) >> denom_bits
+        candidate = search_min_int + offset
+        
+        # Make candidate odd (all primes except 2 are odd)
+        if candidate % 2 == 0:
+            candidate += 1
+            if candidate > search_max_int:
+                candidate -= 2
+        
+        candidates.append(gmpy2.mpz(candidate))
+    
+    return candidates
+
+
+def score_candidates_z5d(candidates):
+    """
+    Score all candidates using Z5D geometric resonance.
+    
+    Lower scores indicate better alignment with Z5D prime predictions.
+    
+    Args:
+        candidates: List of gmpy2.mpz candidates
+    
+    Returns:
+        list of tuples: [(candidate, score), ...] sorted by score (best first)
+    """
+    scored = []
+    failures = 0
+    
+    for c in candidates:
+        try:
+            # Estimate prime index
+            n_est = z5d_n_est(str(c))
+            # Compute Z5D score
+            score = compute_z5d_score(str(c), n_est)
+            scored.append((c, score))
+        except Exception as e:
+            failures += 1
+            if failures <= 3:
+                print(f"  Warning: Z5D scoring failed: {type(e).__name__}")
+    
+    if failures > 0:
+        print(f"  Total scoring failures: {failures}/{len(candidates)}")
+    
+    # Sort by score (lower is better)
+    scored.sort(key=lambda x: x[1])
+    
+    return scored
+
+
+def run_adaptive_window_search(N: gmpy2.mpz, max_time: int) -> dict:
+    """
+    Attempt blind factorization using adaptive window strategy.
+    
+    Key insight from analysis: The q-enrichment suggests searching
+    ABOVE sqrt(N) may be more productive than symmetric search.
+    
+    Args:
+        N: The semiprime to factor
+        max_time: Maximum wallclock seconds
+    
+    Returns:
+        dict: Results including factor (if found), windows tested, time, etc.
+    """
+    sqrt_N = gmpy2.isqrt(N)
+    start_time = time.time()
+    results = {
+        "windows_tested": [],
+        "factor_found": False,
+        "factor": None,
+        "total_candidates_tested": 0,
+        "time_elapsed": 0
+    }
+    
+    print(f"Starting adaptive window search")
+    print(f"N = {N}")
+    print(f"√N = {sqrt_N}")
+    print(f"Max time: {max_time}s")
+    
+    for window_pct in WINDOW_SEQUENCE:
+        elapsed = time.time() - start_time
+        if elapsed >= max_time:
+            print(f"\nTimeout reached: {elapsed:.2f}s >= {max_time}s")
+            break
+            
+        # ASYMMETRIC WINDOW: bias toward larger factor (q)
+        # Based on observed enrichment pattern
+        window_radius = int(sqrt_N * window_pct)
+        search_min = sqrt_N - int(window_radius * 0.3)  # 30% below
+        search_max = sqrt_N + int(window_radius * 1.0)  # 100% above
+        
+        print(f"\n[Window {window_pct*100:.0f}%] Searching [{search_min}, {search_max}]")
+        window_start = time.time()
+        
+        # Generate and score candidates
+        print(f"  Generating {CANDIDATES_PER_WINDOW:,} candidates...")
+        candidates = generate_qmc_candidates(search_min, search_max, CANDIDATES_PER_WINDOW)
+        gen_time = time.time() - window_start
+        print(f"  Generated in {gen_time:.2f}s")
+        
+        print(f"  Scoring with Z5D...")
+        score_start = time.time()
+        scored = score_candidates_z5d(candidates)
+        score_time = time.time() - score_start
+        print(f"  Scored {len(scored)} candidates in {score_time:.2f}s")
+        
+        # Test top-K via GCD
+        top_k = max(1, int(len(scored) * TOP_K_FRACTION))
+        print(f"  Testing top {top_k} candidates ({TOP_K_FRACTION*100:.1f}%) via GCD...")
+        
+        gcd_start = time.time()
+        for i, (candidate, score) in enumerate(scored[:top_k]):
+            results["total_candidates_tested"] += 1
+            
+            g = gmpy2.gcd(candidate, N)
+            if 1 < g < N:
+                # Factor found!
+                results["factor_found"] = True
+                results["factor"] = int(g)
+                results["cofactor"] = int(N // g)
+                results["window_pct"] = window_pct
+                results["candidate_rank"] = i + 1
+                results["candidate_score"] = float(score)
+                results["time_elapsed"] = time.time() - start_time
+                
+                print(f"\n{'='*80}")
+                print(f"FACTOR FOUND!")
+                print(f"{'='*80}")
+                print(f"Factor: {g}")
+                print(f"Cofactor: {N // g}")
+                print(f"Window: {window_pct*100:.0f}%")
+                print(f"Rank: {i+1}/{top_k}")
+                print(f"Score: {score:.4f}")
+                print(f"Time: {results['time_elapsed']:.2f}s")
+                print(f"{'='*80}")
+                
+                return results
+        
+        gcd_time = time.time() - gcd_start
+        window_time = time.time() - window_start
+        
+        # Log window results
+        window_result = {
+            "window_pct": window_pct,
+            "candidates_generated": len(candidates),
+            "top_k_tested": top_k,
+            "elapsed": time.time() - start_time,
+            "window_time": window_time,
+            "gen_time": gen_time,
+            "score_time": score_time,
+            "gcd_time": gcd_time
+        }
+        results["windows_tested"].append(window_result)
+        
+        print(f"  Window completed in {window_time:.2f}s (total: {elapsed+window_time:.2f}s)")
+    
+    results["time_elapsed"] = time.time() - start_time
+    print(f"\nSearch completed. No factor found.")
+    print(f"Total time: {results['time_elapsed']:.2f}s")
+    print(f"Total candidates tested: {results['total_candidates_tested']}")
+    
+    return results
+
+
+def main():
+    """
+    Run the adaptive blind factorization experiment on test semiprimes.
+    """
+    print("="*80)
+    print("ADAPTIVE BLIND FACTORIZATION EXPERIMENT")
+    print("="*80)
+    print()
+    print("This experiment tests blind factorization using adaptive window")
+    print("strategy with Z5D geometric resonance scoring.")
+    print()
+    
+    # Output directory
+    output_dir = Path(".")
+    
+    # Run on each test semiprime
+    all_results = {}
+    
+    for name, test_case in TEST_SEMIPRIMES.items():
+        print(f"\n{'='*80}")
+        print(f"TEST CASE: {name}")
+        print(f"Bits: {test_case['bits']}")
+        print(f"{'='*80}")
+        
+        N = test_case["N"]
+        p_true = test_case["p_true"]
+        q_true = test_case["q_true"]
+        
+        # Run blind search (don't use p_true/q_true during search!)
+        results = run_adaptive_window_search(N, MAX_WALLCLOCK_SECONDS)
+        
+        # Verify against ground truth (for validation only)
+        if results["factor_found"]:
+            factor = gmpy2.mpz(results["factor"])
+            if factor == p_true or factor == q_true:
+                print(f"\n✓ Correct factor found!")
+                results["verification"] = "CORRECT"
+            else:
+                print(f"\n✗ Incorrect factor found!")
+                results["verification"] = "INCORRECT"
+        else:
+            print(f"\n✗ No factor found")
+            results["verification"] = "NOT_FOUND"
+        
+        # Store results
+        all_results[name] = results
+    
+    # Save results to JSON
+    output_file = output_dir / "adaptive_blind_results.json"
+    with open(output_file, 'w') as f:
+        # Convert mpz to strings for JSON serialization
+        json_results = {}
+        for name, result in all_results.items():
+            json_result = result.copy()
+            # Convert any remaining mpz values
+            for key, value in json_result.items():
+                if isinstance(value, gmpy2.mpz):
+                    json_result[key] = str(value)
+            json_results[name] = json_result
+        
+        json.dump(json_results, f, indent=2)
+    
+    print(f"\n{'='*80}")
+    print(f"EXPERIMENT COMPLETE")
+    print(f"{'='*80}")
+    print(f"Results saved to: {output_file}")
+    
+    # Print summary
+    print("\nSUMMARY:")
+    for name, result in all_results.items():
+        status = "✓ FOUND" if result["factor_found"] else "✗ NOT FOUND"
+        time_str = f"{result['time_elapsed']:.2f}s"
+        print(f"  {name}: {status} ({time_str})")
+    
+    return all_results
+
+
+if __name__ == "__main__":
+    main()
