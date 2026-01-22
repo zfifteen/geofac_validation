@@ -1,0 +1,85 @@
+{
+  "metadata": {
+    "timestamp": "2026-01-22 14:01:42",
+    "dataset": "data/prospective_semiprimes.json",
+    "quick_mode": true,
+    "limit": 1
+  },
+  "summary": {
+    "total_semiprimes": 1,
+    "successes": 0,
+    "failures": 1,
+    "success_rate": 0.0,
+    "total_time": 2.3443589210510254,
+    "average_time": 2.3443589210510254,
+    "total_candidates_tested": 20000,
+    "average_iterations": 2.0,
+    "by_bit_range": {
+      "80-100": {
+        "total": 1,
+        "successes": 0,
+        "failures": 1,
+        "success_rate": 0.0
+      }
+    },
+    "by_offset_type": {
+      "balanced": {
+        "total": 1,
+        "successes": 0,
+        "failures": 1,
+        "success_rate": 0.0
+      }
+    }
+  },
+  "results": [
+    {
+      "id": "80-100_balanced_1",
+      "N": "392271149956766202643843937",
+      "bits": 89,
+      "offset_type": "balanced",
+      "target_bits": 90,
+      "success": false,
+      "factor": null,
+      "cofactor": null,
+      "iterations": 2,
+      "total_candidates_tested": 20000,
+      "time_elapsed": 2.3443589210510254,
+      "convergence_reason": "threshold_reached",
+      "timeout": false,
+      "window_history": [
+        {
+          "iteration": 1,
+          "window_center": 19805836259970,
+          "window_radius": 2574758713796,
+          "window_size": 5149517427592,
+          "candidates_tested": 10000,
+          "top_k": 100,
+          "best_score": -3.725053715570211,
+          "cluster_center": 22354793345035,
+          "new_radius": 25747587137,
+          "iteration_time": 1.1830940246582031,
+          "factor_found": false
+        },
+        {
+          "iteration": 2,
+          "window_center": 22354793345035,
+          "window_radius": 25747587137,
+          "window_size": 51495174274,
+          "candidates_tested": 10000,
+          "top_k": 100,
+          "best_score": -3.7250543707727064,
+          "cluster_center": 22380282915885,
+          "new_radius": 257475871,
+          "iteration_time": 1.1579365730285645,
+          "factor_found": false
+        }
+      ],
+      "parameters": {
+        "candidates_per_iteration": 10000,
+        "max_iterations": 5,
+        "max_time": 300,
+        "quick_mode": true
+      }
+    }
+  ]
+}
