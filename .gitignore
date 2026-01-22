@@ -6,3 +6,7 @@ __pycache__/
 *.pyo
 .pytest_cache/
 .ipynb_checkpoints/
+adaptive_blind_results.json
+scale_validation_results.json
+scale_test_output.log
+SCALE_VALIDATION_FINDINGS.md
