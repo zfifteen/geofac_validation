@@ -93,7 +93,8 @@ def generate_qmc_candidates(search_min: gmpy2.mpz, search_max: gmpy2.mpz,
     Generate QMC candidates using Sobol sequence for uniform coverage.
     
     Uses 2D Sobol sequence mapped to 106-bit fixed-point precision
-    to avoid float quantization issues.
+    to avoid float quantization issues. For small ranges, falls back
+    to dense sampling to ensure complete coverage.
     
     Args:
         search_min: Minimum candidate value (gmpy2.mpz)
@@ -103,14 +104,37 @@ def generate_qmc_candidates(search_min: gmpy2.mpz, search_max: gmpy2.mpz,
     Returns:
         list of gmpy2.mpz: Odd candidates in the search range
     """
-    # Initialize Sobol sampler with 2D space
-    sampler = qmc.Sobol(d=2, scramble=True, seed=QMC_SEED)
-    qmc_samples = sampler.random(n=n_samples)
-    
     # Convert to integers for arithmetic
     search_min_int = int(search_min)
     search_max_int = int(search_max)
     search_range_int = search_max_int - search_min_int
+    
+    # For very small ranges, use dense sampling instead of QMC
+    # This ensures we don't miss factors due to quantization
+    if search_range_int < n_samples * 2:
+        # Generate all odd numbers in the range, then sample uniformly
+        candidates = []
+        for val in range(search_min_int, search_max_int + 1):
+            if val % 2 == 1:  # Only odd numbers
+                candidates.append(gmpy2.mpz(val))
+        
+        # If we have fewer candidates than requested, repeat them
+        if len(candidates) < n_samples:
+            # Repeat the list to reach n_samples
+            repetitions = (n_samples // len(candidates)) + 1
+            candidates = (candidates * repetitions)[:n_samples]
+        elif len(candidates) > n_samples:
+            # Randomly sample n_samples from the candidates
+            import random
+            random.seed(QMC_SEED)
+            candidates = random.sample(candidates, n_samples)
+        
+        return candidates
+    
+    # For larger ranges, use QMC as before
+    # Initialize Sobol sampler with 2D space
+    sampler = qmc.Sobol(d=2, scramble=True, seed=QMC_SEED)
+    qmc_samples = sampler.random(n=n_samples)
     
     # Fixed-point precision constants
     scale = 1 << QMC_SCALE_BITS
@@ -278,8 +302,19 @@ def gradient_zoom(N: gmpy2.mpz,
     window_center = sqrt_N
     window_radius = int(sqrt_N * initial_window_pct)
     
-    # Convergence threshold
-    convergence_threshold = gmpy2.mpz(1) << convergence_threshold_bits
+    # Convergence threshold - adjust based on N size
+    # For N^(1/4), we want 2^(bits/4)
+    # But for small N, this might be too large, so cap it intelligently
+    n_bits = N.bit_length()
+    auto_threshold_bits = max(convergence_threshold_bits, n_bits // 4)
+    # For very small N, use a fraction of the initial window
+    if auto_threshold_bits > n_bits - 4:
+        # Use 1/100 of initial window as threshold for small numbers
+        convergence_threshold = max(gmpy2.mpz(1), window_radius // 100)
+        if verbose:
+            print(f"Auto-adjusting convergence threshold for small N: {convergence_threshold}")
+    else:
+        convergence_threshold = gmpy2.mpz(1) << auto_threshold_bits
     
     results = {
         "factor_found": False,
@@ -355,7 +390,9 @@ def gradient_zoom(N: gmpy2.mpz,
             print(f"  Score range: [{best_score:.4f}, {worst_top_score:.4f}]")
         
         # Step 4: Test - Check if any top candidates are factors
-        for candidate, score in top_candidates[:100]:  # Test top 100 only for efficiency
+        # Test all top candidates (not just top 100) since we want maximum coverage
+        gcd_test_count = min(len(top_candidates), 1000)  # Cap at 1000 for efficiency
+        for candidate, score in top_candidates[:gcd_test_count]:
             g = gmpy2.gcd(candidate, N)
             if g > 1 and g < N:
                 # Factor found!
@@ -432,6 +469,56 @@ def gradient_zoom(N: gmpy2.mpz,
             if verbose:
                 print(f"\n  Convergence threshold reached: {window_radius} <= {convergence_threshold}")
                 print(f"  Window ready for Coppersmith handoff (Stage 3)")
+                print(f"  Performing exhaustive GCD test on final window...")
+            
+            # Final exhaustive check: test ALL candidates in the final window
+            final_test_count = 0
+            for candidate, score in scored:  # Test all, not just top_k
+                final_test_count += 1
+                g = gmpy2.gcd(candidate, N)
+                if g > 1 and g < N:
+                    # Factor found in final exhaustive search!
+                    results["factor_found"] = True
+                    results["factor"] = g
+                    results["cofactor"] = N // g
+                    results["iterations"] = iteration + 1
+                    results["total_candidates_tested"] += len(candidates)
+                    results["time_elapsed"] = time.time() - start_time
+                    results["convergence_reason"] = "factor_found_final"
+                    
+                    if verbose:
+                        print(f"\n{'='*70}")
+                        print(f"✓ FACTOR FOUND IN FINAL WINDOW!")
+                        print(f"{'='*70}")
+                        print(f"Factor: {g}")
+                        print(f"Cofactor: {N // g}")
+                        print(f"Tested {final_test_count} candidates in final window")
+                        print(f"Iterations: {iteration + 1}")
+                        print(f"Total candidates tested: {results['total_candidates_tested']:,}")
+                        print(f"Time elapsed: {results['time_elapsed']:.2f}s")
+                        print(f"{'='*70}")
+                    
+                    # Record final window state
+                    iteration_time = time.time() - iteration_start
+                    results["window_history"].append({
+                        "iteration": iteration + 1,
+                        "window_center": int(window_center),
+                        "window_radius": int(window_radius),
+                        "window_size": int(search_max - search_min),
+                        "candidates_tested": len(candidates),
+                        "top_k": top_k,
+                        "best_score": float(best_score),
+                        "cluster_center": int(cluster_center),
+                        "new_radius": int(new_window_radius),
+                        "iteration_time": iteration_time,
+                        "factor_found": True
+                    })
+                    
+                    return results
+            
+            if verbose:
+                print(f"  Tested all {final_test_count} candidates in final window - no factor found")
+            
             break
     
     results["iterations"] = len(results["window_history"])
