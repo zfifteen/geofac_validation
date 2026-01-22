@@ -192,6 +192,46 @@ All tests used asymmetric windows (30% below √N, 100% above √N):
 2. **Requires sufficient candidates:** 5,000 candidates/window insufficient for high confidence
 3. **Time-accuracy tradeoff:** More windows and candidates increase success probability
 
+### Coverage Paradox Analysis
+
+**Critical Finding (January 22, 2026):** Independent mathematical verification revealed a significant dimensional analysis error in coverage calculations.
+
+#### N₁₂₇ Coverage Calculation
+
+For the 127-bit semiprime (N₁₂₇ = 1.375 × 10³⁸):
+- **√N₁₂₇:** ≈ 1.172 × 10¹⁹
+- **13% Window Radius:** 1.523 × 10¹⁸
+- **Window Size:** 3.046 × 10¹⁸
+- **Candidates Sampled:** 1,000,000
+
+**Actual Coverage:**
+```
+Coverage = Candidates / Window_Size
+         = 10⁶ / (1.523 × 10¹⁸)
+         = 6.57 × 10⁻¹³
+         = 0.00000000006%  (10⁻¹¹% order of magnitude)
+```
+
+**Previously Claimed:** 0.00007% coverage
+
+**Discrepancy Source:** The original calculation confused "percentage of √N" (13%) with "percentage of candidates tested within the window" (10⁻¹¹%).
+
+#### Birthday Paradox Implications
+
+For a space of size M = 1.523 × 10¹⁸, the number of samples required for 50% collision probability is:
+
+```
+n ≈ √(M × ln(2)) ≈ 1.03 × 10⁹
+```
+
+With only 10⁶ samples, the collision probability is effectively zero (<0.0001%), even with Z5D enrichment. **The sampling deficit is 1000×**, explaining why N₁₂₇ was not factored despite strong statistical signal (p < 10⁻³⁰⁰).
+
+#### Key Conclusion
+
+The failure to factor N₁₂₇ is **not a signal quality problem** (Z5D demonstrates p < 10⁻³⁰⁰ statistical significance) but a **search density problem**. The blind QMC sampling strategy, while mathematically valid, requires sampling densities that are computationally infeasible for large search spaces.
+
+**Recommended Solution:** Implement gradient-guided optimization (Issue #43) to leverage the Z5D signal for directed search rather than exhaustive sampling.
+
 ### Production Recommendations
 
 For operational use with semiprimes in the 1e5-1e18 range:

@@ -10,3 +10,5 @@ adaptive_blind_results.json
 scale_validation_results.json
 scale_test_output.log
 SCALE_VALIDATION_FINDINGS.md
+prospective_semiprimes_factors.json
+gradient_zoom_test_results.json
