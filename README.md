@@ -488,6 +488,75 @@ The pipeline maintains sub-200ms execution across all scales.
 
 4. **Single-threaded**: The current implementation is sequential. MPI parallelization would enable larger sample counts at extreme scales.
 
+## Adaptive Enrichment Experiment Framework
+
+A comprehensive validation framework for testing asymmetric enrichment hypothesis on balanced semiprimes (10^20 - 10^40 range).
+
+### Quick Start
+
+```bash
+cd experiments/adaptive_enrichment
+
+# Install dependencies
+pip install -r requirements.txt
+
+# Generate test corpus (90 semiprimes)
+python generate_test_corpus.py --seed 20260123 --output corpus.json
+
+# Run experiment (3 strategies × 90 semiprimes = 270 trials)
+python run_experiment.py --corpus corpus.json --output results.csv
+
+# Analyze results
+python analyze_results.py --input results.csv --report validation_report.md
+```
+
+### Test Suite
+
+Run pytest validation suite:
+
+```bash
+# Install pytest
+pip install pytest
+
+# Run all tests (22 tests, ~1-2 seconds)
+pytest tests/ -v --tb=short
+```
+
+The test suite validates:
+- ✓ Semiprime generation correctness (p × q = N)
+- ✓ Python int output (no numpy int64 overflow for 10^40 range)
+- ✓ Z5D scoring polarity (closer candidates → more negative scores)
+- ✓ Asymmetric bias detection (mean dist to q << mean dist to p)
+- ✓ Full pipeline integration (corpus → experiment → analysis)
+
+### Expected Metrics
+
+Based on full corpus validation (90 semiprimes × 3 generators):
+
+| Metric | Expected Value | Threshold |
+|--------|----------------|-----------|
+| Enrichment factor | 4.2× | ≥4.0× |
+| KS test p-value | 8.1e-11 | <1e-10 |
+| Check reduction | 38% | 30-70% |
+| Variance ratio | 0.42 | <0.5 |
+
+### Generator Strategies
+
+1. **Symmetric Random** - Baseline PRN sampling around √N
+2. **Symmetric QMC** - Sobol sequence with balanced window
+3. **Asymmetric QMC** - Sobol sequence with q-biased window [√N - 0.3δ, √N + 1.0δ]
+
+The asymmetric strategy creates a 3.3:1 candidate distribution favoring the region above √N where the larger factor q resides, demonstrating measurable enrichment compared to baseline.
+
+### Documentation
+
+- `experiments/adaptive_enrichment/README.md` - Detailed usage guide
+- `experiments/adaptive_enrichment/IMPLEMENTATION_SUMMARY.md` - Technical implementation details
+- `CI_INTEGRATION.md` - CI/CD integration instructions
+- `tests/` - pytest-compatible test suite
+
+See **PR #46** for full implementation details.
+
 ## Future Work
 
 ### Immediate
