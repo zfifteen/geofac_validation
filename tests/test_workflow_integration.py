@@ -13,6 +13,7 @@ import tempfile
 import os
 from pathlib import Path
 import pandas as pd
+from dataclasses import asdict
 
 from generate_test_corpus import generate_corpus
 from run_experiment import main as run_experiment_main
@@ -38,7 +39,6 @@ class TestWorkflowIntegration:
             )
             
             # Save to file
-            from dataclasses import asdict
             with open(corpus_path, 'w') as f:
                 json.dump([asdict(c) for c in corpus], f)
             
@@ -75,7 +75,6 @@ class TestWorkflowIntegration:
             )
             
             # Save corpus
-            from dataclasses import asdict
             with open(corpus_path, 'w') as f:
                 json.dump([asdict(c) for c in corpus], f)
             
@@ -131,7 +130,6 @@ class TestWorkflowIntegration:
             )
             
             # Save corpus
-            from dataclasses import asdict
             with open(corpus_path, 'w') as f:
                 json.dump([asdict(c) for c in corpus], f)
             
@@ -187,7 +185,6 @@ class TestWorkflowIntegration:
             assert len(corpus) >= 2, "Should generate at least 2 semiprimes"
             
             # Save corpus
-            from dataclasses import asdict
             with open(corpus_path, 'w') as f:
                 json.dump([asdict(c) for c in corpus], f)
             

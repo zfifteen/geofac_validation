@@ -12,6 +12,7 @@ import pytest
 import sys
 from pathlib import Path
 from math import isqrt
+import numpy as np
 
 # Import modules from experiments/adaptive_enrichment
 from generate_test_corpus import generate_corpus, SemiprimeCase
@@ -223,8 +224,6 @@ class TestLargeIntegerHandling:
     
     def test_no_int64_overflow(self):
         """Verify that large numbers don't overflow to int64."""
-        import numpy as np
-        
         # Test that our implementation doesn't use int64
         N_large = 10**40 + 7
         sqrt_N_large = isqrt(N_large)
