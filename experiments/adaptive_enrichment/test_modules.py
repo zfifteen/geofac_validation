@@ -129,8 +129,8 @@ def test_large_integer_handling():
     candidates = gen.generate_candidates(sqrt_N_large, n_candidates=10)
     
     assert len(candidates) > 0, "Failed: Should generate candidates for large N"
-    assert all(isinstance(c, (int, type(sqrt_N_large))) for c in candidates), \
-        "Failed: All candidates should be integers"
+    assert all(isinstance(c, int) for c in candidates), \
+        "Failed: All candidates should be Python integers"
     
     print(f"   ✓ Large integer sqrt: sqrt({N_large}) = {sqrt_N_large}")
     print(f"   ✓ Generated {len(candidates)} candidates for 10^40 range")

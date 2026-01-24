@@ -29,6 +29,7 @@ def z5d_score(candidate: int, N: int, sqrt_N: int) -> float:
     pi_approx = prime_count_approx(candidate)
     density_factor = pi_approx / max(candidate, 1)
     
-    # Combined score: more negative for better candidates
-    score = np.log1p(dist) - np.log1p(density_factor + 1e-10)  # CORRECTED: positive log(dist), negative log(density) for negative scores
+    # Combined score: subtraction creates negative scores (lower = better)
+    # Near sqrt(N) with high prime density → more negative score
+    score = np.log1p(dist) - np.log1p(density_factor + 1e-10)
     return score
