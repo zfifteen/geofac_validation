@@ -27,8 +27,9 @@ class QMCCandidateGenerator:
             search_min = max(2, int(sqrt_N - delta))
             search_max = int(sqrt_N + delta)
         points = self.sobol.random(n_candidates)
-        candidates = np.round(points[:, 0] * (search_max - search_min) + search_min).astype(int)
-        return list(np.unique(candidates))
+        candidates = np.round(points[:, 0] * (search_max - search_min) + search_min)
+        # Convert to Python int to avoid int64 overflow on large values
+        return [int(c) for c in sorted(set(candidates))]
 
 class RandomCandidateGenerator:
     """Baseline PRN generator for comparison."""
@@ -48,4 +49,5 @@ class RandomCandidateGenerator:
             search_min = max(2, int(sqrt_N - delta))
             search_max = int(sqrt_N + delta)
         candidates = self.rng.integers(search_min, search_max + 1, size=n_candidates)
-        return list(np.unique(candidates))
+        # Convert to Python int to avoid int64 overflow on large values
+        return [int(c) for c in sorted(set(candidates))]
