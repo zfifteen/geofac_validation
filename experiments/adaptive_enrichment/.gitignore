@@ -1,0 +1,23 @@
+# Generated corpus files
+corpus.json
+test_corpus*.json
+
+# Experiment results
+results.csv
+test_results*.csv
+
+# Analysis reports
+validation_report.md
+test_validation_report*.md
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Virtual environments
+venv/
+env/
+ENV/
